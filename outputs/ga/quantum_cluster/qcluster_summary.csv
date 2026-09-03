@@ -1,0 +1,7 @@
+scale_name,num_customers,num_vehicles,total_runtime_s,dijkstra_time_s,q_cluster_time_s,best_distance_km,best_travel_time_s,hga_distance_km,old_qga_distance_km,gain_vs_old_qga_pct,violations,is_valid
+20_cust,20,4,5.23,0.91,4.32,55.51,5481.2,66.95,82.65,32.84,0,True
+50_cust,50,5,16.51,2.65,13.87,141.31,14417.0,108.83,197.95,28.61,6,False
+100_cust,100,10,33.49,5.95,27.54,289.99,30013.6,181.06,507.2,42.82,11,False
+200_cust,200,20,73.98,15.43,58.55,650.76,66361.7,346.72,1009.0,35.5,20,False
+500_cust,500,25,405.96,64.69,341.27,1032.28,108995.2,469.48,2569.87,59.83,175,False
+1000_cust,1000,50,922.06,196.81,725.25,2132.2,222772.7,837.87,5078.55,58.02,331,False

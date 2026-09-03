@@ -1,0 +1,569 @@
+{
+  "instance_name": "Chandigarh_20_Sector_MDVRP",
+  "description": "Multi-Depot VRP on 20 Chandigarh sectors. 4 depots, 40 customers, 8 vehicles. Sectors: Sector 7, Sector 8, Sector 9, Sector 10, Sector 11, Sector 15, Sector 16, Sector 17, Sector 18, Sector 19, Sector 20, Sector 21, Sector 22, Sector 23, Sector 24, Sector 25, Sector 26, Sector 27, Sector 34, Sector 35",
+  "sectors_used": [
+    "Sector 7",
+    "Sector 8",
+    "Sector 9",
+    "Sector 10",
+    "Sector 11",
+    "Sector 15",
+    "Sector 16",
+    "Sector 17",
+    "Sector 18",
+    "Sector 19",
+    "Sector 20",
+    "Sector 21",
+    "Sector 22",
+    "Sector 23",
+    "Sector 24",
+    "Sector 25",
+    "Sector 26",
+    "Sector 27",
+    "Sector 34",
+    "Sector 35"
+  ],
+  "depots": [
+    {
+      "id": 0,
+      "name": "Depot 1 — Sector 17 ISBT (North-Central)",
+      "latitude": 30.7398,
+      "longitude": 76.7827,
+      "nearest_node_id": 1431039905,
+      "node_latitude": 30.7395805,
+      "node_longitude": 76.784268
+    },
+    {
+      "id": 1,
+      "name": "Depot 2 — Sector 22 (West)",
+      "latitude": 30.733,
+      "longitude": 76.765,
+      "nearest_node_id": 1429078504,
+      "node_latitude": 30.7336682,
+      "node_longitude": 76.7652383
+    },
+    {
+      "id": 2,
+      "name": "Depot 3 — Sector 26 (South)",
+      "latitude": 30.71,
+      "longitude": 76.778,
+      "nearest_node_id": 1428255268,
+      "node_latitude": 30.715009,
+      "node_longitude": 76.7786518
+    },
+    {
+      "id": 3,
+      "name": "Depot 4 — Sector 9 (North-East)",
+      "latitude": 30.753,
+      "longitude": 76.801,
+      "nearest_node_id": 1430575479,
+      "node_latitude": 30.7520388,
+      "node_longitude": 76.7970002
+    }
+  ],
+  "customers": [
+    {
+      "id": 1,
+      "name": "Customer 1 (Sector 7)",
+      "sector": "Sector 7",
+      "latitude": 30.7546895,
+      "longitude": 76.7879045,
+      "demand": 1,
+      "nearest_node_id": 1431157157,
+      "node_latitude": 30.7546895,
+      "node_longitude": 76.7879045
+    },
+    {
+      "id": 2,
+      "name": "Customer 2 (Sector 7)",
+      "sector": "Sector 7",
+      "latitude": 30.7553494,
+      "longitude": 76.7887373,
+      "demand": 1,
+      "nearest_node_id": 1431157294,
+      "node_latitude": 30.7553494,
+      "node_longitude": 76.7887373
+    },
+    {
+      "id": 3,
+      "name": "Customer 3 (Sector 8)",
+      "sector": "Sector 8",
+      "latitude": 30.7528879,
+      "longitude": 76.7760503,
+      "demand": 3,
+      "nearest_node_id": 11847349575,
+      "node_latitude": 30.7528879,
+      "node_longitude": 76.7760503
+    },
+    {
+      "id": 4,
+      "name": "Customer 4 (Sector 8)",
+      "sector": "Sector 8",
+      "latitude": 30.7530338,
+      "longitude": 76.7762851,
+      "demand": 2,
+      "nearest_node_id": 1431219046,
+      "node_latitude": 30.7530338,
+      "node_longitude": 76.7762851
+    },
+    {
+      "id": 5,
+      "name": "Customer 5 (Sector 9)",
+      "sector": "Sector 9",
+      "latitude": 30.749701,
+      "longitude": 76.7989532,
+      "demand": 2,
+      "nearest_node_id": 1430575431,
+      "node_latitude": 30.749701,
+      "node_longitude": 76.7989532
+    },
+    {
+      "id": 6,
+      "name": "Customer 6 (Sector 9)",
+      "sector": "Sector 9",
+      "latitude": 30.753813,
+      "longitude": 76.7968234,
+      "demand": 2,
+      "nearest_node_id": 1430575555,
+      "node_latitude": 30.753813,
+      "node_longitude": 76.7968234
+    },
+    {
+      "id": 7,
+      "name": "Customer 7 (Sector 10)",
+      "sector": "Sector 10",
+      "latitude": 30.7462282,
+      "longitude": 76.8016135,
+      "demand": 1,
+      "nearest_node_id": 4833812673,
+      "node_latitude": 30.7462282,
+      "node_longitude": 76.8016135
+    },
+    {
+      "id": 8,
+      "name": "Customer 8 (Sector 10)",
+      "sector": "Sector 10",
+      "latitude": 30.7453538,
+      "longitude": 76.8001868,
+      "demand": 5,
+      "nearest_node_id": 1430553512,
+      "node_latitude": 30.7453538,
+      "node_longitude": 76.8001868
+    },
+    {
+      "id": 9,
+      "name": "Customer 9 (Sector 11)",
+      "sector": "Sector 11",
+      "latitude": 30.7472026,
+      "longitude": 76.7752078,
+      "demand": 1,
+      "nearest_node_id": 1431135555,
+      "node_latitude": 30.7472026,
+      "node_longitude": 76.7752078
+    },
+    {
+      "id": 10,
+      "name": "Customer 10 (Sector 11)",
+      "sector": "Sector 11",
+      "latitude": 30.747113,
+      "longitude": 76.7750653,
+      "demand": 5,
+      "nearest_node_id": 1431135552,
+      "node_latitude": 30.747113,
+      "node_longitude": 76.7750653
+    },
+    {
+      "id": 11,
+      "name": "Customer 11 (Sector 15)",
+      "sector": "Sector 15",
+      "latitude": 30.7425638,
+      "longitude": 76.7790175,
+      "demand": 4,
+      "nearest_node_id": 1431041313,
+      "node_latitude": 30.7425638,
+      "node_longitude": 76.7790175
+    },
+    {
+      "id": 12,
+      "name": "Customer 12 (Sector 15)",
+      "sector": "Sector 15",
+      "latitude": 30.7426147,
+      "longitude": 76.7790986,
+      "demand": 1,
+      "nearest_node_id": 1431041329,
+      "node_latitude": 30.7426147,
+      "node_longitude": 76.7790986
+    },
+    {
+      "id": 13,
+      "name": "Customer 13 (Sector 16)",
+      "sector": "Sector 16",
+      "latitude": 30.7428051,
+      "longitude": 76.7676549,
+      "demand": 1,
+      "nearest_node_id": 1429027868,
+      "node_latitude": 30.7428051,
+      "node_longitude": 76.7676549
+    },
+    {
+      "id": 14,
+      "name": "Customer 14 (Sector 16)",
+      "sector": "Sector 16",
+      "latitude": 30.7414906,
+      "longitude": 76.768986,
+      "demand": 1,
+      "nearest_node_id": 1429027787,
+      "node_latitude": 30.7414906,
+      "node_longitude": 76.768986
+    },
+    {
+      "id": 15,
+      "name": "Customer 15 (Sector 17)",
+      "sector": "Sector 17",
+      "latitude": 30.7353286,
+      "longitude": 76.7858195,
+      "demand": 2,
+      "nearest_node_id": 1430552957,
+      "node_latitude": 30.7353286,
+      "node_longitude": 76.7858195
+    },
+    {
+      "id": 16,
+      "name": "Customer 16 (Sector 17)",
+      "sector": "Sector 17",
+      "latitude": 30.7343272,
+      "longitude": 76.7842218,
+      "demand": 2,
+      "nearest_node_id": 1430552927,
+      "node_latitude": 30.7343272,
+      "node_longitude": 76.7842218
+    },
+    {
+      "id": 17,
+      "name": "Customer 17 (Sector 18)",
+      "sector": "Sector 18",
+      "latitude": 30.7250713,
+      "longitude": 76.7834537,
+      "demand": 5,
+      "nearest_node_id": 1429262274,
+      "node_latitude": 30.7250713,
+      "node_longitude": 76.7834537
+    },
+    {
+      "id": 18,
+      "name": "Customer 18 (Sector 18)",
+      "sector": "Sector 18",
+      "latitude": 30.7251072,
+      "longitude": 76.7835116,
+      "demand": 5,
+      "nearest_node_id": 1429262279,
+      "node_latitude": 30.7251072,
+      "node_longitude": 76.7835116
+    },
+    {
+      "id": 19,
+      "name": "Customer 19 (Sector 19)",
+      "sector": "Sector 19",
+      "latitude": 30.7292095,
+      "longitude": 76.7920186,
+      "demand": 1,
+      "nearest_node_id": 1429418221,
+      "node_latitude": 30.7292095,
+      "node_longitude": 76.7920186
+    },
+    {
+      "id": 20,
+      "name": "Customer 20 (Sector 19)",
+      "sector": "Sector 19",
+      "latitude": 30.7292581,
+      "longitude": 76.7920765,
+      "demand": 5,
+      "nearest_node_id": 1429418224,
+      "node_latitude": 30.7292581,
+      "node_longitude": 76.7920765
+    },
+    {
+      "id": 21,
+      "name": "Customer 21 (Sector 20)",
+      "sector": "Sector 20",
+      "latitude": 30.7273827,
+      "longitude": 76.7902921,
+      "demand": 2,
+      "nearest_node_id": 1429418104,
+      "node_latitude": 30.7273827,
+      "node_longitude": 76.7902921
+    },
+    {
+      "id": 22,
+      "name": "Customer 22 (Sector 20)",
+      "sector": "Sector 20",
+      "latitude": 30.7271534,
+      "longitude": 76.7904908,
+      "demand": 5,
+      "nearest_node_id": 1429418074,
+      "node_latitude": 30.7271534,
+      "node_longitude": 76.7904908
+    },
+    {
+      "id": 23,
+      "name": "Customer 23 (Sector 21)",
+      "sector": "Sector 21",
+      "latitude": 30.7200292,
+      "longitude": 76.7866309,
+      "demand": 4,
+      "nearest_node_id": 1429261888,
+      "node_latitude": 30.7200292,
+      "node_longitude": 76.7866309
+    },
+    {
+      "id": 24,
+      "name": "Customer 24 (Sector 21)",
+      "sector": "Sector 21",
+      "latitude": 30.7201505,
+      "longitude": 76.7865248,
+      "demand": 2,
+      "nearest_node_id": 1429261901,
+      "node_latitude": 30.7201505,
+      "node_longitude": 76.7865248
+    },
+    {
+      "id": 25,
+      "name": "Customer 25 (Sector 22)",
+      "sector": "Sector 22",
+      "latitude": 30.7323073,
+      "longitude": 76.7655439,
+      "demand": 4,
+      "nearest_node_id": 1429078307,
+      "node_latitude": 30.7323073,
+      "node_longitude": 76.7655439
+    },
+    {
+      "id": 26,
+      "name": "Customer 26 (Sector 22)",
+      "sector": "Sector 22",
+      "latitude": 30.7321869,
+      "longitude": 76.765342,
+      "demand": 5,
+      "nearest_node_id": 1429078301,
+      "node_latitude": 30.7321869,
+      "node_longitude": 76.765342
+    },
+    {
+      "id": 27,
+      "name": "Customer 27 (Sector 23)",
+      "sector": "Sector 23",
+      "latitude": 30.7289399,
+      "longitude": 76.7644734,
+      "demand": 3,
+      "nearest_node_id": 1428390928,
+      "node_latitude": 30.7289399,
+      "node_longitude": 76.7644734
+    },
+    {
+      "id": 28,
+      "name": "Customer 28 (Sector 23)",
+      "sector": "Sector 23",
+      "latitude": 30.7295379,
+      "longitude": 76.7640104,
+      "demand": 1,
+      "nearest_node_id": 1428390980,
+      "node_latitude": 30.7295379,
+      "node_longitude": 76.7640104
+    },
+    {
+      "id": 29,
+      "name": "Customer 29 (Sector 24)",
+      "sector": "Sector 24",
+      "latitude": 30.7191801,
+      "longitude": 76.77712,
+      "demand": 2,
+      "nearest_node_id": 1429261796,
+      "node_latitude": 30.7191801,
+      "node_longitude": 76.77712
+    },
+    {
+      "id": 30,
+      "name": "Customer 30 (Sector 24)",
+      "sector": "Sector 24",
+      "latitude": 30.7186521,
+      "longitude": 76.7766598,
+      "demand": 4,
+      "nearest_node_id": 1429261700,
+      "node_latitude": 30.7186521,
+      "node_longitude": 76.7766598
+    },
+    {
+      "id": 31,
+      "name": "Customer 31 (Sector 25)",
+      "sector": "Sector 25",
+      "latitude": 30.7170598,
+      "longitude": 76.7678203,
+      "demand": 3,
+      "nearest_node_id": 1428280415,
+      "node_latitude": 30.7170598,
+      "node_longitude": 76.7678203
+    },
+    {
+      "id": 32,
+      "name": "Customer 32 (Sector 25)",
+      "sector": "Sector 25",
+      "latitude": 30.7161819,
+      "longitude": 76.7661042,
+      "demand": 3,
+      "nearest_node_id": 1428311968,
+      "node_latitude": 30.7161819,
+      "node_longitude": 76.7661042
+    },
+    {
+      "id": 33,
+      "name": "Customer 33 (Sector 26)",
+      "sector": "Sector 26",
+      "latitude": 30.7150536,
+      "longitude": 76.7784352,
+      "demand": 2,
+      "nearest_node_id": 1428255275,
+      "node_latitude": 30.7150536,
+      "node_longitude": 76.7784352
+    },
+    {
+      "id": 34,
+      "name": "Customer 34 (Sector 26)",
+      "sector": "Sector 26",
+      "latitude": 30.715182,
+      "longitude": 76.7790915,
+      "demand": 2,
+      "nearest_node_id": 10004331264,
+      "node_latitude": 30.715182,
+      "node_longitude": 76.7790915
+    },
+    {
+      "id": 35,
+      "name": "Customer 35 (Sector 27)",
+      "sector": "Sector 27",
+      "latitude": 30.7182582,
+      "longitude": 76.7840311,
+      "demand": 3,
+      "nearest_node_id": 1429141520,
+      "node_latitude": 30.7182582,
+      "node_longitude": 76.7840311
+    },
+    {
+      "id": 36,
+      "name": "Customer 36 (Sector 27)",
+      "sector": "Sector 27",
+      "latitude": 30.7184451,
+      "longitude": 76.7843292,
+      "demand": 1,
+      "nearest_node_id": 1429141526,
+      "node_latitude": 30.7184451,
+      "node_longitude": 76.7843292
+    },
+    {
+      "id": 37,
+      "name": "Customer 37 (Sector 34)",
+      "sector": "Sector 34",
+      "latitude": 30.7140947,
+      "longitude": 76.7624257,
+      "demand": 1,
+      "nearest_node_id": 1428311915,
+      "node_latitude": 30.7140947,
+      "node_longitude": 76.7624257
+    },
+    {
+      "id": 38,
+      "name": "Customer 38 (Sector 34)",
+      "sector": "Sector 34",
+      "latitude": 30.7145827,
+      "longitude": 76.7631944,
+      "demand": 4,
+      "nearest_node_id": 1428311921,
+      "node_latitude": 30.7145827,
+      "node_longitude": 76.7631944
+    },
+    {
+      "id": 39,
+      "name": "Customer 39 (Sector 35)",
+      "sector": "Sector 35",
+      "latitude": 30.7153305,
+      "longitude": 76.7780543,
+      "demand": 1,
+      "nearest_node_id": 10004331263,
+      "node_latitude": 30.7153305,
+      "node_longitude": 76.7780543
+    },
+    {
+      "id": 40,
+      "name": "Customer 40 (Sector 35)",
+      "sector": "Sector 35",
+      "latitude": 30.7153818,
+      "longitude": 76.7789063,
+      "demand": 3,
+      "nearest_node_id": 1429261246,
+      "node_latitude": 30.7153818,
+      "node_longitude": 76.7789063
+    }
+  ],
+  "vehicles": {
+    "list": [
+      {
+        "id": 0,
+        "home_depot_id": 0,
+        "capacity": 20
+      },
+      {
+        "id": 1,
+        "home_depot_id": 0,
+        "capacity": 20
+      },
+      {
+        "id": 2,
+        "home_depot_id": 1,
+        "capacity": 20
+      },
+      {
+        "id": 3,
+        "home_depot_id": 1,
+        "capacity": 20
+      },
+      {
+        "id": 4,
+        "home_depot_id": 2,
+        "capacity": 20
+      },
+      {
+        "id": 5,
+        "home_depot_id": 2,
+        "capacity": 20
+      },
+      {
+        "id": 6,
+        "home_depot_id": 3,
+        "capacity": 20
+      },
+      {
+        "id": 7,
+        "home_depot_id": 3,
+        "capacity": 20
+      }
+    ],
+    "count": 8,
+    "default_capacity": 20,
+    "max_route_duration_sec": 5400.0
+  },
+  "road_capacities": {
+    "primary": 10,
+    "secondary": 7,
+    "tertiary": 5,
+    "residential": 3,
+    "service": 2,
+    "default": 3
+  },
+  "road_speeds_kmh": {
+    "primary": 40.0,
+    "secondary": 35.0,
+    "tertiary": 30.0,
+    "residential": 20.0,
+    "service": 15.0,
+    "default": 20.0
+  }
+}

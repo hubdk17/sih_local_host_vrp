@@ -1,0 +1,11 @@
+city_key,city_name,topology,num_depots,num_customers,num_vehicles,hga_cost_inr,hga_distance_km,hga_time_hrs,hga_violations,dqco_cost_inr,dqco_distance_km,dqco_time_hrs,dqco_violations,winner,cost_savings_pct
+delhi,Delhi (NCT),Radial / Concentric Ring,4,100,12,16553.0,631.3,31.82,5175,15350.0,589.1,29.36,1006,MD-CA-DQCO,7.27
+delhi,Delhi (NCT),Radial / Concentric Ring,4,500,24,38454.0,1448.1,75.9,4460,52837.0,2016.7,101.76,3162,MD-CA-HGA,-37.4
+mumbai,Mumbai,Linear Coastal Peninsula,5,100,12,8749.0,333.8,16.63,0,8005.0,307.0,15.18,0,MD-CA-DQCO,8.51
+mumbai,Mumbai,Linear Coastal Peninsula,5,500,24,22728.0,871.0,43.57,93,34097.0,1328.4,63.31,0,MD-CA-HGA,-50.02
+bengaluru,Bengaluru,Concentric Rings & Radial IT,4,100,12,13134.0,497.4,25.23,0,11157.0,419.9,21.75,0,MD-CA-DQCO,15.06
+bengaluru,Bengaluru,Concentric Rings & Radial IT,4,500,24,33000.0,1236.0,64.76,87,44699.0,1688.3,86.13,0,MD-CA-HGA,-35.45
+kolkata,Kolkata,River-Bisected Linear Corridor,3,100,12,8641.0,304.7,17.79,0,7121.0,253.4,14.54,0,MD-CA-DQCO,17.58
+kolkata,Kolkata,River-Bisected Linear Corridor,3,500,24,21157.0,756.4,43.36,62,27070.0,973.1,54.77,0,MD-CA-HGA,-27.95
+chennai,Chennai,Coastal Arc with Radial Spokes,3,100,12,11606.0,417.0,23.37,0,8380.0,300.0,17.03,0,MD-CA-DQCO,27.79
+chennai,Chennai,Coastal Arc with Radial Spokes,3,500,24,25116.0,909.5,50.35,51,31120.0,1123.3,62.47,0,MD-CA-HGA,-23.9

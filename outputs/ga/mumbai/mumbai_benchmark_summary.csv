@@ -1,0 +1,7 @@
+scale_name,num_customers,num_vehicles,dijkstra_time_s,hga_distance_km,hga_runtime_s,hga_violations,dqco_distance_km,dqco_runtime_s,dqco_violations,winner,dqco_gain_pct
+20_cust,20,4,0.09,237.74,0.26,0,171.47,0.36,0,DQCO,27.88
+50_cust,50,5,0.2,365.78,0.33,0,254.13,0.87,0,DQCO,30.53
+100_cust,100,10,0.34,665.53,0.63,0,409.12,1.41,0,DQCO,38.53
+200_cust,200,20,0.39,1142.56,0.38,0,691.54,1.03,0,DQCO,39.47
+500_cust,500,25,0.65,1651.21,0.45,0,1478.5,3.28,0,DQCO,10.46
+1000_cust,1000,50,1.95,2780.39,1.31,1,2917.43,14.66,0,H-GA,-4.93

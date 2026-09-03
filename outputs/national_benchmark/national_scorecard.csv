@@ -1,0 +1,21 @@
+city_key,city_name,topology,scale,num_customers,num_vehicles,hga_distance_km,hga_violations,dqco_distance_km,dqco_violations,winner,dqco_gain_pct
+delhi,Delhi (NCT),Radial / Concentric Ring,100_cust,100,10,884.95,751,543.0,0,DQCO,38.64
+delhi,Delhi (NCT),Radial / Concentric Ring,500_cust,500,25,2337.86,6766,2346.15,216,H-GA,-0.35
+mumbai,Mumbai,Linear Coastal Peninsula,100_cust,100,10,634.52,0,393.99,0,DQCO,37.91
+mumbai,Mumbai,Linear Coastal Peninsula,500_cust,500,25,1547.02,4,1548.74,0,H-GA,-0.11
+bengaluru,Bengaluru,Concentric Rings & Radial IT,100_cust,100,10,883.73,0,492.38,0,DQCO,44.28
+bengaluru,Bengaluru,Concentric Rings & Radial IT,500_cust,500,25,2110.15,0,1860.53,0,DQCO,11.83
+kolkata,Kolkata,River-Bisected Linear Corridor,100_cust,100,10,378.0,0,299.13,0,DQCO,20.86
+kolkata,Kolkata,River-Bisected Linear Corridor,500_cust,500,25,961.59,1,983.12,0,H-GA,-2.24
+chennai,Chennai,Coastal Arc with Radial Spokes,100_cust,100,10,482.33,0,318.45,0,DQCO,33.98
+chennai,Chennai,Coastal Arc with Radial Spokes,500_cust,500,25,1167.88,3,1189.86,0,H-GA,-1.88
+hyderabad,Hyderabad,Twin-City Radial / Musi River,100_cust,100,10,566.34,0,439.01,0,DQCO,22.48
+hyderabad,Hyderabad,Twin-City Radial / Musi River,500_cust,500,25,1495.3,2,1538.56,0,H-GA,-2.89
+ahmedabad,Ahmedabad,River-Bisected Concentric,100_cust,100,10,365.36,0,265.95,0,DQCO,27.21
+ahmedabad,Ahmedabad,River-Bisected Concentric,500_cust,500,25,887.09,1,884.75,0,DQCO,0.26
+pune,Pune,Hill-Bounded Confluence Valley,100_cust,100,10,422.12,0,337.34,0,DQCO,20.09
+pune,Pune,Hill-Bounded Confluence Valley,500_cust,500,25,1012.8,1,1039.44,0,H-GA,-2.63
+chandigarh,Chandigarh,Strict Orthogonal Grid,100_cust,100,10,295.13,0,192.39,0,DQCO,34.81
+chandigarh,Chandigarh,Strict Orthogonal Grid,500_cust,500,25,795.74,2,841.46,0,H-GA,-5.75
+jaipur,Jaipur,Historic Grid + Radial Sprawl,100_cust,100,10,355.39,0,256.46,0,DQCO,27.84
+jaipur,Jaipur,Historic Grid + Radial Sprawl,500_cust,500,25,847.54,0,856.69,0,H-GA,-1.08

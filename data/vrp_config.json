@@ -1,0 +1,536 @@
+{
+  "instance_name": "Chandigarh_50_Customer_VRP",
+  "description": "Tougher 50-customer 5-vehicle VRP benchmark mapped to Chandigarh OSM graph (Sectors 17-20)",
+  "depot": {
+    "id": 0,
+    "name": "Depot (Sector 17 ISBT)",
+    "latitude": 30.7398,
+    "longitude": 76.7827,
+    "nearest_node_id": 1431039905,
+    "node_latitude": 30.7395805,
+    "node_longitude": 76.784268
+  },
+  "customers": [
+    {
+      "id": 1,
+      "name": "Customer 1 (Sector 17 Commercial)",
+      "latitude": 30.7312343,
+      "longitude": 76.7828097,
+      "demand": 1,
+      "nearest_node_id": 1430552747,
+      "node_latitude": 30.7312343,
+      "node_longitude": 76.7828097
+    },
+    {
+      "id": 2,
+      "name": "Customer 2 (Sector 18 Market)",
+      "latitude": 30.7255453,
+      "longitude": 76.7830589,
+      "demand": 2,
+      "nearest_node_id": 1429262301,
+      "node_latitude": 30.7255453,
+      "node_longitude": 76.7830589
+    },
+    {
+      "id": 3,
+      "name": "Customer 3 (Sector 19 Sadar)",
+      "latitude": 30.7294293,
+      "longitude": 76.7894058,
+      "demand": 1,
+      "nearest_node_id": 1429418242,
+      "node_latitude": 30.7294293,
+      "node_longitude": 76.7894058
+    },
+    {
+      "id": 4,
+      "name": "Customer 4 (Sector 20 Residential)",
+      "latitude": 30.7271534,
+      "longitude": 76.7904908,
+      "demand": 3,
+      "nearest_node_id": 1429418074,
+      "node_latitude": 30.7271534,
+      "node_longitude": 76.7904908
+    },
+    {
+      "id": 5,
+      "name": "Customer 5 (Sector 17 Commercial)",
+      "latitude": 30.7307688,
+      "longitude": 76.7942167,
+      "demand": 2,
+      "nearest_node_id": 1429418578,
+      "node_latitude": 30.7307688,
+      "node_longitude": 76.7942167
+    },
+    {
+      "id": 6,
+      "name": "Customer 6 (Sector 18 Market)",
+      "latitude": 30.7388557,
+      "longitude": 76.7892169,
+      "demand": 1,
+      "nearest_node_id": 1430553089,
+      "node_latitude": 30.7388557,
+      "node_longitude": 76.7892169
+    },
+    {
+      "id": 7,
+      "name": "Customer 7 (Sector 19 Sadar)",
+      "latitude": 30.7297931,
+      "longitude": 76.7887636,
+      "demand": 2,
+      "nearest_node_id": 1429418316,
+      "node_latitude": 30.7297931,
+      "node_longitude": 76.7887636
+    },
+    {
+      "id": 8,
+      "name": "Customer 8 (Sector 20 Residential)",
+      "latitude": 30.7342825,
+      "longitude": 76.7953504,
+      "demand": 1,
+      "nearest_node_id": 1429418986,
+      "node_latitude": 30.7342825,
+      "node_longitude": 76.7953504
+    },
+    {
+      "id": 9,
+      "name": "Customer 9 (Sector 17 Commercial)",
+      "latitude": 30.7195408,
+      "longitude": 76.7743101,
+      "demand": 1,
+      "nearest_node_id": 1429261827,
+      "node_latitude": 30.7195408,
+      "node_longitude": 76.7743101
+    },
+    {
+      "id": 10,
+      "name": "Customer 10 (Sector 18 Market)",
+      "latitude": 30.715182,
+      "longitude": 76.7790915,
+      "demand": 1,
+      "nearest_node_id": 10004331264,
+      "node_latitude": 30.715182,
+      "node_longitude": 76.7790915
+    },
+    {
+      "id": 11,
+      "name": "Customer 11 (Sector 19 Sadar)",
+      "latitude": 30.740655,
+      "longitude": 76.7884416,
+      "demand": 3,
+      "nearest_node_id": 9184728224,
+      "node_latitude": 30.740655,
+      "node_longitude": 76.7884416
+    },
+    {
+      "id": 12,
+      "name": "Customer 12 (Sector 20 Residential)",
+      "latitude": 30.7153305,
+      "longitude": 76.7780543,
+      "demand": 4,
+      "nearest_node_id": 10004331263,
+      "node_latitude": 30.7153305,
+      "node_longitude": 76.7780543
+    },
+    {
+      "id": 13,
+      "name": "Customer 13 (Sector 17 Commercial)",
+      "latitude": 30.7328129,
+      "longitude": 76.7888977,
+      "demand": 2,
+      "nearest_node_id": 1430552801,
+      "node_latitude": 30.7328129,
+      "node_longitude": 76.7888977
+    },
+    {
+      "id": 14,
+      "name": "Customer 14 (Sector 18 Market)",
+      "latitude": 30.7322693,
+      "longitude": 76.7840879,
+      "demand": 2,
+      "nearest_node_id": 1430552783,
+      "node_latitude": 30.7322693,
+      "node_longitude": 76.7840879
+    },
+    {
+      "id": 15,
+      "name": "Customer 15 (Sector 19 Sadar)",
+      "latitude": 30.7357162,
+      "longitude": 76.7951297,
+      "demand": 2,
+      "nearest_node_id": 1430552982,
+      "node_latitude": 30.7357162,
+      "node_longitude": 76.7951297
+    },
+    {
+      "id": 16,
+      "name": "Customer 16 (Sector 20 Residential)",
+      "latitude": 30.7162566,
+      "longitude": 76.7788959,
+      "demand": 1,
+      "nearest_node_id": 1429261318,
+      "node_latitude": 30.7162566,
+      "node_longitude": 76.7788959
+    },
+    {
+      "id": 17,
+      "name": "Customer 17 (Sector 17 Commercial)",
+      "latitude": 30.7345368,
+      "longitude": 76.7880133,
+      "demand": 2,
+      "nearest_node_id": 1430552931,
+      "node_latitude": 30.7345368,
+      "node_longitude": 76.7880133
+    },
+    {
+      "id": 18,
+      "name": "Customer 18 (Sector 18 Market)",
+      "latitude": 30.7192504,
+      "longitude": 76.77763,
+      "demand": 4,
+      "nearest_node_id": 1429261799,
+      "node_latitude": 30.7192504,
+      "node_longitude": 76.77763
+    },
+    {
+      "id": 19,
+      "name": "Customer 19 (Sector 19 Sadar)",
+      "latitude": 30.7246157,
+      "longitude": 76.7876053,
+      "demand": 1,
+      "nearest_node_id": 1429262257,
+      "node_latitude": 30.7246157,
+      "node_longitude": 76.7876053
+    },
+    {
+      "id": 20,
+      "name": "Customer 20 (Sector 20 Residential)",
+      "latitude": 30.7263774,
+      "longitude": 76.7854351,
+      "demand": 2,
+      "nearest_node_id": 1429262335,
+      "node_latitude": 30.7263774,
+      "node_longitude": 76.7854351
+    },
+    {
+      "id": 21,
+      "name": "Customer 21 (Sector 17 Commercial)",
+      "latitude": 30.7212806,
+      "longitude": 76.7883452,
+      "demand": 1,
+      "nearest_node_id": 1429262024,
+      "node_latitude": 30.7212806,
+      "node_longitude": 76.7883452
+    },
+    {
+      "id": 22,
+      "name": "Customer 22 (Sector 18 Market)",
+      "latitude": 30.7156597,
+      "longitude": 76.7780636,
+      "demand": 2,
+      "nearest_node_id": 1429261268,
+      "node_latitude": 30.7156597,
+      "node_longitude": 76.7780636
+    },
+    {
+      "id": 23,
+      "name": "Customer 23 (Sector 19 Sadar)",
+      "latitude": 30.7289636,
+      "longitude": 76.7955075,
+      "demand": 3,
+      "nearest_node_id": 11703942625,
+      "node_latitude": 30.7289636,
+      "node_longitude": 76.7955075
+    },
+    {
+      "id": 24,
+      "name": "Customer 24 (Sector 20 Residential)",
+      "latitude": 30.7390618,
+      "longitude": 76.7919516,
+      "demand": 3,
+      "nearest_node_id": 1430553098,
+      "node_latitude": 30.7390618,
+      "node_longitude": 76.7919516
+    },
+    {
+      "id": 25,
+      "name": "Customer 25 (Sector 17 Commercial)",
+      "latitude": 30.727198,
+      "longitude": 76.7851982,
+      "demand": 2,
+      "nearest_node_id": 10230398020,
+      "node_latitude": 30.727198,
+      "node_longitude": 76.7851982
+    },
+    {
+      "id": 26,
+      "name": "Customer 26 (Sector 18 Market)",
+      "latitude": 30.7197868,
+      "longitude": 76.7861542,
+      "demand": 2,
+      "nearest_node_id": 1429261854,
+      "node_latitude": 30.7197868,
+      "node_longitude": 76.7861542
+    },
+    {
+      "id": 27,
+      "name": "Customer 27 (Sector 19 Sadar)",
+      "latitude": 30.7248926,
+      "longitude": 76.7811909,
+      "demand": 4,
+      "nearest_node_id": 1429262267,
+      "node_latitude": 30.7248926,
+      "node_longitude": 76.7811909
+    },
+    {
+      "id": 28,
+      "name": "Customer 28 (Sector 20 Residential)",
+      "latitude": 30.7395718,
+      "longitude": 76.7773625,
+      "demand": 2,
+      "nearest_node_id": 9184582837,
+      "node_latitude": 30.7395718,
+      "node_longitude": 76.7773625
+    },
+    {
+      "id": 29,
+      "name": "Customer 29 (Sector 17 Commercial)",
+      "latitude": 30.728214,
+      "longitude": 76.7974116,
+      "demand": 2,
+      "nearest_node_id": 3941039057,
+      "node_latitude": 30.728214,
+      "node_longitude": 76.7974116
+    },
+    {
+      "id": 30,
+      "name": "Customer 30 (Sector 18 Market)",
+      "latitude": 30.7187164,
+      "longitude": 76.7841069,
+      "demand": 1,
+      "nearest_node_id": 1429141534,
+      "node_latitude": 30.7187164,
+      "node_longitude": 76.7841069
+    },
+    {
+      "id": 31,
+      "name": "Customer 31 (Sector 19 Sadar)",
+      "latitude": 30.7315195,
+      "longitude": 76.7935543,
+      "demand": 2,
+      "nearest_node_id": 1429418707,
+      "node_latitude": 30.7315195,
+      "node_longitude": 76.7935543
+    },
+    {
+      "id": 32,
+      "name": "Customer 32 (Sector 20 Residential)",
+      "latitude": 30.7332715,
+      "longitude": 76.7825225,
+      "demand": 1,
+      "nearest_node_id": 1430552852,
+      "node_latitude": 30.7332715,
+      "node_longitude": 76.7825225
+    },
+    {
+      "id": 33,
+      "name": "Customer 33 (Sector 17 Commercial)",
+      "latitude": 30.7397224,
+      "longitude": 76.7802595,
+      "demand": 1,
+      "nearest_node_id": 6241244433,
+      "node_latitude": 30.7397224,
+      "node_longitude": 76.7802595
+    },
+    {
+      "id": 34,
+      "name": "Customer 34 (Sector 18 Market)",
+      "latitude": 30.733367,
+      "longitude": 76.7909064,
+      "demand": 2,
+      "nearest_node_id": 1430552882,
+      "node_latitude": 30.733367,
+      "node_longitude": 76.7909064
+    },
+    {
+      "id": 35,
+      "name": "Customer 35 (Sector 19 Sadar)",
+      "latitude": 30.7268777,
+      "longitude": 76.7947409,
+      "demand": 3,
+      "nearest_node_id": 1429418035,
+      "node_latitude": 30.7268777,
+      "node_longitude": 76.7947409
+    },
+    {
+      "id": 36,
+      "name": "Customer 36 (Sector 20 Residential)",
+      "latitude": 30.7240943,
+      "longitude": 76.7927242,
+      "demand": 1,
+      "nearest_node_id": 1429417868,
+      "node_latitude": 30.7240943,
+      "node_longitude": 76.7927242
+    },
+    {
+      "id": 37,
+      "name": "Customer 37 (Sector 17 Commercial)",
+      "latitude": 30.7268138,
+      "longitude": 76.7949776,
+      "demand": 1,
+      "nearest_node_id": 1429418027,
+      "node_latitude": 30.7268138,
+      "node_longitude": 76.7949776
+    },
+    {
+      "id": 38,
+      "name": "Customer 38 (Sector 18 Market)",
+      "latitude": 30.7260241,
+      "longitude": 76.7916708,
+      "demand": 2,
+      "nearest_node_id": 1429417966,
+      "node_latitude": 30.7260241,
+      "node_longitude": 76.7916708
+    },
+    {
+      "id": 39,
+      "name": "Customer 39 (Sector 19 Sadar)",
+      "latitude": 30.7332668,
+      "longitude": 76.7907409,
+      "demand": 1,
+      "nearest_node_id": 1430552858,
+      "node_latitude": 30.7332668,
+      "node_longitude": 76.7907409
+    },
+    {
+      "id": 40,
+      "name": "Customer 40 (Sector 20 Residential)",
+      "latitude": 30.7281505,
+      "longitude": 76.7960188,
+      "demand": 3,
+      "nearest_node_id": 9184721660,
+      "node_latitude": 30.7281505,
+      "node_longitude": 76.7960188
+    },
+    {
+      "id": 41,
+      "name": "Customer 41 (Sector 17 Commercial)",
+      "latitude": 30.7258107,
+      "longitude": 76.7845221,
+      "demand": 2,
+      "nearest_node_id": 1429262320,
+      "node_latitude": 30.7258107,
+      "node_longitude": 76.7845221
+    },
+    {
+      "id": 42,
+      "name": "Customer 42 (Sector 18 Market)",
+      "latitude": 30.7251674,
+      "longitude": 76.7886398,
+      "demand": 4,
+      "nearest_node_id": 1429417907,
+      "node_latitude": 30.7251674,
+      "node_longitude": 76.7886398
+    },
+    {
+      "id": 43,
+      "name": "Customer 43 (Sector 19 Sadar)",
+      "latitude": 30.738086,
+      "longitude": 76.7905447,
+      "demand": 4,
+      "nearest_node_id": 11846970216,
+      "node_latitude": 30.738086,
+      "node_longitude": 76.7905447
+    },
+    {
+      "id": 44,
+      "name": "Customer 44 (Sector 20 Residential)",
+      "latitude": 30.7229906,
+      "longitude": 76.7860035,
+      "demand": 2,
+      "nearest_node_id": 1429262160,
+      "node_latitude": 30.7229906,
+      "node_longitude": 76.7860035
+    },
+    {
+      "id": 45,
+      "name": "Customer 45 (Sector 17 Commercial)",
+      "latitude": 30.7368462,
+      "longitude": 76.7858129,
+      "demand": 2,
+      "nearest_node_id": 11865970502,
+      "node_latitude": 30.7368462,
+      "node_longitude": 76.7858129
+    },
+    {
+      "id": 46,
+      "name": "Customer 46 (Sector 18 Market)",
+      "latitude": 30.7307546,
+      "longitude": 76.7847827,
+      "demand": 1,
+      "nearest_node_id": 1430552695,
+      "node_latitude": 30.7307546,
+      "node_longitude": 76.7847827
+    },
+    {
+      "id": 47,
+      "name": "Customer 47 (Sector 19 Sadar)",
+      "latitude": 30.7398666,
+      "longitude": 76.7783703,
+      "demand": 3,
+      "nearest_node_id": 1431040058,
+      "node_latitude": 30.7398666,
+      "node_longitude": 76.7783703
+    },
+    {
+      "id": 48,
+      "name": "Customer 48 (Sector 20 Residential)",
+      "latitude": 30.7307135,
+      "longitude": 76.7972518,
+      "demand": 1,
+      "nearest_node_id": 1429418570,
+      "node_latitude": 30.7307135,
+      "node_longitude": 76.7972518
+    },
+    {
+      "id": 49,
+      "name": "Customer 49 (Sector 17 Commercial)",
+      "latitude": 30.7190546,
+      "longitude": 76.7809232,
+      "demand": 1,
+      "nearest_node_id": 1429261779,
+      "node_latitude": 30.7190546,
+      "node_longitude": 76.7809232
+    },
+    {
+      "id": 50,
+      "name": "Customer 50 (Sector 18 Market)",
+      "latitude": 30.7190689,
+      "longitude": 76.7846951,
+      "demand": 2,
+      "nearest_node_id": 1429261774,
+      "node_latitude": 30.7190689,
+      "node_longitude": 76.7846951
+    }
+  ],
+  "vehicles": {
+    "count": 5,
+    "capacity": 30,
+    "max_route_duration_sec": 3600.0
+  },
+  "road_capacities": {
+    "primary": 10,
+    "secondary": 7,
+    "tertiary": 5,
+    "residential": 3,
+    "service": 2,
+    "default": 3
+  },
+  "road_speeds_kmh": {
+    "primary": 40.0,
+    "secondary": 35.0,
+    "tertiary": 30.0,
+    "residential": 20.0,
+    "service": 15.0,
+    "default": 20.0
+  }
+}

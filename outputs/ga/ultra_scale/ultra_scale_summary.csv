@@ -1,0 +1,6 @@
+scale_name,num_customers,num_vehicles,dijkstra_time_s,hga_distance_km,hga_runtime_s,hga_violations,q_cluster_distance_km,q_cluster_runtime_s,q_cluster_violations,winner,distance_gain_pct
+1000_cust,1000,50,4.78,3388.42,4.02,3,4734.54,18.14,24929,H-GA,-39.73
+2000_cust,2000,100,11.13,6049.85,8.81,1,9489.77,46.11,68555,H-GA,-56.86
+3000_cust,3000,150,13.36,8342.72,4.49,14,14207.41,33.78,96324,H-GA,-70.3
+5000_cust,5000,250,15.6,12424.04,8.24,18,23473.92,76.42,37332,H-GA,-88.94
+10000_cust,10000,500,38.89,22242.74,21.66,64,49662.76,187.09,12551,H-GA,-123.28

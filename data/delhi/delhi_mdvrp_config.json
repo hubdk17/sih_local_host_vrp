@@ -1,0 +1,694 @@
+{
+  "instance_name": "Delhi_50_Customer_MDVRP",
+  "description": "Multi-Depot VRP on Delhi road network. 4 depots, 50 customers, 10 vehicles.",
+  "localities_used": [
+    "Connaught Place",
+    "Khan Market",
+    "Karol Bagh",
+    "Lajpat Nagar",
+    "Saket Commercial Hub",
+    "Hauz Khas Village",
+    "Nehru Place Financial Center",
+    "Greater Kailash I",
+    "Chanakyapuri Embassy Area",
+    "Dhaula Kuan Junction",
+    "Nizamuddin East",
+    "Defense Colony",
+    "Green Park Commercial",
+    "Malviya Nagar Market",
+    "Sarojini Nagar Market",
+    "Lodhi Estate",
+    "Vasant Vihar Hub",
+    "R.K. Puram Sector 1",
+    "South Extension Market",
+    "Moti Bagh Commercial",
+    "Kalkaaji Market",
+    "Munirka Market",
+    "Chirag Delhi Junction",
+    "Panchsheel Park",
+    "Jangpura Hub"
+  ],
+  "depots": [
+    {
+      "id": 0,
+      "name": "Depot 1 — ISBT Kashmere Gate (North Hub)",
+      "latitude": 28.6672,
+      "longitude": 77.2284,
+      "nearest_node_id": 5681321307,
+      "node_latitude": 28.6363652,
+      "node_longitude": 77.2222342
+    },
+    {
+      "id": 1,
+      "name": "Depot 2 — Connaught Place (Central Logistics Hub)",
+      "latitude": 28.6315,
+      "longitude": 77.2167,
+      "nearest_node_id": 4083436490,
+      "node_latitude": 28.6305317,
+      "node_longitude": 77.2176681
+    },
+    {
+      "id": 2,
+      "name": "Depot 3 — AIIMS / Ring Road (South-Central Hub)",
+      "latitude": 28.5672,
+      "longitude": 77.21,
+      "nearest_node_id": 939278375,
+      "node_latitude": 28.5642346,
+      "node_longitude": 77.2076293
+    },
+    {
+      "id": 3,
+      "name": "Depot 4 — Lajpat Nagar / Okhla (South-East Hub)",
+      "latitude": 28.5685,
+      "longitude": 77.2435,
+      "nearest_node_id": 910451344,
+      "node_latitude": 28.5928072,
+      "node_longitude": 77.240056
+    }
+  ],
+  "customers": [
+    {
+      "id": 1,
+      "name": "Customer 1 (Connaught Place)",
+      "locality": "Connaught Place",
+      "latitude": 28.6314291,
+      "longitude": 77.2167421,
+      "demand": 1,
+      "nearest_node_id": 249783302,
+      "node_latitude": 28.6314291,
+      "node_longitude": 77.2167421
+    },
+    {
+      "id": 2,
+      "name": "Customer 2 (Connaught Place)",
+      "locality": "Connaught Place",
+      "latitude": 28.6316729,
+      "longitude": 77.2166601,
+      "demand": 1,
+      "nearest_node_id": 1762977534,
+      "node_latitude": 28.6316729,
+      "node_longitude": 77.2166601
+    },
+    {
+      "id": 3,
+      "name": "Customer 3 (Khan Market)",
+      "locality": "Khan Market",
+      "latitude": 28.6004576,
+      "longitude": 77.2265472,
+      "demand": 3,
+      "nearest_node_id": 938641800,
+      "node_latitude": 28.6004576,
+      "node_longitude": 77.2265472
+    },
+    {
+      "id": 4,
+      "name": "Customer 4 (Khan Market)",
+      "locality": "Khan Market",
+      "latitude": 28.599448,
+      "longitude": 77.2274891,
+      "demand": 2,
+      "nearest_node_id": 13347368841,
+      "node_latitude": 28.599448,
+      "node_longitude": 77.2274891
+    },
+    {
+      "id": 5,
+      "name": "Customer 5 (Karol Bagh)",
+      "locality": "Karol Bagh",
+      "latitude": 28.639667,
+      "longitude": 77.2041866,
+      "demand": 2,
+      "nearest_node_id": 9843268862,
+      "node_latitude": 28.639667,
+      "node_longitude": 77.2041866
+    },
+    {
+      "id": 6,
+      "name": "Customer 6 (Karol Bagh)",
+      "locality": "Karol Bagh",
+      "latitude": 28.6396125,
+      "longitude": 77.204296,
+      "demand": 2,
+      "nearest_node_id": 4231821260,
+      "node_latitude": 28.6396125,
+      "node_longitude": 77.204296
+    },
+    {
+      "id": 7,
+      "name": "Customer 7 (Lajpat Nagar)",
+      "locality": "Lajpat Nagar",
+      "latitude": 28.5807871,
+      "longitude": 77.2249303,
+      "demand": 1,
+      "nearest_node_id": 1453714288,
+      "node_latitude": 28.5807871,
+      "node_longitude": 77.2249303
+    },
+    {
+      "id": 8,
+      "name": "Customer 8 (Lajpat Nagar)",
+      "locality": "Lajpat Nagar",
+      "latitude": 28.580437,
+      "longitude": 77.2246013,
+      "demand": 5,
+      "nearest_node_id": 14029112737,
+      "node_latitude": 28.580437,
+      "node_longitude": 77.2246013
+    },
+    {
+      "id": 9,
+      "name": "Customer 9 (Saket Commercial Hub)",
+      "locality": "Saket Commercial Hub",
+      "latitude": 28.5635058,
+      "longitude": 77.2104067,
+      "demand": 1,
+      "nearest_node_id": 6435736588,
+      "node_latitude": 28.5635058,
+      "node_longitude": 77.2104067
+    },
+    {
+      "id": 10,
+      "name": "Customer 10 (Saket Commercial Hub)",
+      "locality": "Saket Commercial Hub",
+      "latitude": 28.5632353,
+      "longitude": 77.2079258,
+      "demand": 5,
+      "nearest_node_id": 4233845383,
+      "node_latitude": 28.5632353,
+      "node_longitude": 77.2079258
+    },
+    {
+      "id": 11,
+      "name": "Customer 11 (Hauz Khas Village)",
+      "locality": "Hauz Khas Village",
+      "latitude": 28.5652572,
+      "longitude": 77.2021781,
+      "demand": 4,
+      "nearest_node_id": 4233845388,
+      "node_latitude": 28.5652572,
+      "node_longitude": 77.2021781
+    },
+    {
+      "id": 12,
+      "name": "Customer 12 (Hauz Khas Village)",
+      "locality": "Hauz Khas Village",
+      "latitude": 28.569168,
+      "longitude": 77.1940292,
+      "demand": 1,
+      "nearest_node_id": 13964574296,
+      "node_latitude": 28.569168,
+      "node_longitude": 77.1940292
+    },
+    {
+      "id": 13,
+      "name": "Customer 13 (Nehru Place Financial Center)",
+      "locality": "Nehru Place Financial Center",
+      "latitude": 28.568605,
+      "longitude": 77.2168584,
+      "demand": 1,
+      "nearest_node_id": 9870290403,
+      "node_latitude": 28.568605,
+      "node_longitude": 77.2168584
+    },
+    {
+      "id": 14,
+      "name": "Customer 14 (Nehru Place Financial Center)",
+      "locality": "Nehru Place Financial Center",
+      "latitude": 28.5691124,
+      "longitude": 77.216756,
+      "demand": 1,
+      "nearest_node_id": 448443953,
+      "node_latitude": 28.5691124,
+      "node_longitude": 77.216756
+    },
+    {
+      "id": 15,
+      "name": "Customer 15 (Greater Kailash I)",
+      "locality": "Greater Kailash I",
+      "latitude": 28.5689444,
+      "longitude": 77.2166184,
+      "demand": 2,
+      "nearest_node_id": 10242231170,
+      "node_latitude": 28.5689444,
+      "node_longitude": 77.2166184
+    },
+    {
+      "id": 16,
+      "name": "Customer 16 (Greater Kailash I)",
+      "locality": "Greater Kailash I",
+      "latitude": 28.5691188,
+      "longitude": 77.2166516,
+      "demand": 2,
+      "nearest_node_id": 10242231169,
+      "node_latitude": 28.5691188,
+      "node_longitude": 77.2166516
+    },
+    {
+      "id": 17,
+      "name": "Customer 17 (Chanakyapuri Embassy Area)",
+      "locality": "Chanakyapuri Embassy Area",
+      "latitude": 28.5978767,
+      "longitude": 77.1909919,
+      "demand": 5,
+      "nearest_node_id": 3742314076,
+      "node_latitude": 28.5978767,
+      "node_longitude": 77.1909919
+    },
+    {
+      "id": 18,
+      "name": "Customer 18 (Chanakyapuri Embassy Area)",
+      "locality": "Chanakyapuri Embassy Area",
+      "latitude": 28.5979068,
+      "longitude": 77.1909142,
+      "demand": 5,
+      "nearest_node_id": 3742314077,
+      "node_latitude": 28.5979068,
+      "node_longitude": 77.1909142
+    },
+    {
+      "id": 19,
+      "name": "Customer 19 (Dhaula Kuan Junction)",
+      "locality": "Dhaula Kuan Junction",
+      "latitude": 28.5938751,
+      "longitude": 77.1680163,
+      "demand": 1,
+      "nearest_node_id": 915368044,
+      "node_latitude": 28.5938751,
+      "node_longitude": 77.1680163
+    },
+    {
+      "id": 20,
+      "name": "Customer 20 (Dhaula Kuan Junction)",
+      "locality": "Dhaula Kuan Junction",
+      "latitude": 28.5926998,
+      "longitude": 77.1683233,
+      "demand": 5,
+      "nearest_node_id": 915369131,
+      "node_latitude": 28.5926998,
+      "node_longitude": 77.1683233
+    },
+    {
+      "id": 21,
+      "name": "Customer 21 (Nizamuddin East)",
+      "locality": "Nizamuddin East",
+      "latitude": 28.5933516,
+      "longitude": 77.2433284,
+      "demand": 2,
+      "nearest_node_id": 267074522,
+      "node_latitude": 28.5933516,
+      "node_longitude": 77.2433284
+    },
+    {
+      "id": 22,
+      "name": "Customer 22 (Nizamuddin East)",
+      "locality": "Nizamuddin East",
+      "latitude": 28.59328,
+      "longitude": 77.2432871,
+      "demand": 5,
+      "nearest_node_id": 267074523,
+      "node_latitude": 28.59328,
+      "node_longitude": 77.2432871
+    },
+    {
+      "id": 23,
+      "name": "Customer 23 (Defense Colony)",
+      "locality": "Defense Colony",
+      "latitude": 28.5804857,
+      "longitude": 77.2245943,
+      "demand": 4,
+      "nearest_node_id": 14039772958,
+      "node_latitude": 28.5804857,
+      "node_longitude": 77.2245943
+    },
+    {
+      "id": 24,
+      "name": "Customer 24 (Defense Colony)",
+      "locality": "Defense Colony",
+      "latitude": 28.5807544,
+      "longitude": 77.2245555,
+      "demand": 2,
+      "nearest_node_id": 14029112716,
+      "node_latitude": 28.5807544,
+      "node_longitude": 77.2245555
+    },
+    {
+      "id": 25,
+      "name": "Customer 25 (Green Park Commercial)",
+      "locality": "Green Park Commercial",
+      "latitude": 28.5633171,
+      "longitude": 77.2077511,
+      "demand": 4,
+      "nearest_node_id": 10810639786,
+      "node_latitude": 28.5633171,
+      "node_longitude": 77.2077511
+    },
+    {
+      "id": 26,
+      "name": "Customer 26 (Green Park Commercial)",
+      "locality": "Green Park Commercial",
+      "latitude": 28.5633112,
+      "longitude": 77.207929,
+      "demand": 5,
+      "nearest_node_id": 2507343889,
+      "node_latitude": 28.5633112,
+      "node_longitude": 77.207929
+    },
+    {
+      "id": 27,
+      "name": "Customer 27 (Malviya Nagar Market)",
+      "locality": "Malviya Nagar Market",
+      "latitude": 28.5636201,
+      "longitude": 77.2076633,
+      "demand": 3,
+      "nearest_node_id": 6404933467,
+      "node_latitude": 28.5636201,
+      "node_longitude": 77.2076633
+    },
+    {
+      "id": 28,
+      "name": "Customer 28 (Malviya Nagar Market)",
+      "locality": "Malviya Nagar Market",
+      "latitude": 28.5653814,
+      "longitude": 77.2076057,
+      "demand": 1,
+      "nearest_node_id": 939278266,
+      "node_latitude": 28.5653814,
+      "node_longitude": 77.2076057
+    },
+    {
+      "id": 29,
+      "name": "Customer 29 (Sarojini Nagar Market)",
+      "locality": "Sarojini Nagar Market",
+      "latitude": 28.5756785,
+      "longitude": 77.197329,
+      "demand": 2,
+      "nearest_node_id": 2591114295,
+      "node_latitude": 28.5756785,
+      "node_longitude": 77.197329
+    },
+    {
+      "id": 30,
+      "name": "Customer 30 (Sarojini Nagar Market)",
+      "locality": "Sarojini Nagar Market",
+      "latitude": 28.5765075,
+      "longitude": 77.1972978,
+      "demand": 4,
+      "nearest_node_id": 12805976281,
+      "node_latitude": 28.5765075,
+      "node_longitude": 77.1972978
+    },
+    {
+      "id": 31,
+      "name": "Customer 31 (Lodhi Estate)",
+      "locality": "Lodhi Estate",
+      "latitude": 28.5919692,
+      "longitude": 77.2213109,
+      "demand": 3,
+      "nearest_node_id": 1658920632,
+      "node_latitude": 28.5919692,
+      "node_longitude": 77.2213109
+    },
+    {
+      "id": 32,
+      "name": "Customer 32 (Lodhi Estate)",
+      "locality": "Lodhi Estate",
+      "latitude": 28.5928977,
+      "longitude": 77.2216498,
+      "demand": 3,
+      "nearest_node_id": 575875165,
+      "node_latitude": 28.5928977,
+      "node_longitude": 77.2216498
+    },
+    {
+      "id": 33,
+      "name": "Customer 33 (Vasant Vihar Hub)",
+      "locality": "Vasant Vihar Hub",
+      "latitude": 28.573465,
+      "longitude": 77.1791751,
+      "demand": 2,
+      "nearest_node_id": 1116447987,
+      "node_latitude": 28.573465,
+      "node_longitude": 77.1791751
+    },
+    {
+      "id": 34,
+      "name": "Customer 34 (Vasant Vihar Hub)",
+      "locality": "Vasant Vihar Hub",
+      "latitude": 28.573546,
+      "longitude": 77.1792578,
+      "demand": 2,
+      "nearest_node_id": 9861783899,
+      "node_latitude": 28.573546,
+      "node_longitude": 77.1792578
+    },
+    {
+      "id": 35,
+      "name": "Customer 35 (R.K. Puram Sector 1)",
+      "locality": "R.K. Puram Sector 1",
+      "latitude": 28.5705518,
+      "longitude": 77.1831051,
+      "demand": 3,
+      "nearest_node_id": 1114879055,
+      "node_latitude": 28.5705518,
+      "node_longitude": 77.1831051
+    },
+    {
+      "id": 36,
+      "name": "Customer 36 (R.K. Puram Sector 1)",
+      "locality": "R.K. Puram Sector 1",
+      "latitude": 28.5706352,
+      "longitude": 77.1831568,
+      "demand": 1,
+      "nearest_node_id": 6642434605,
+      "node_latitude": 28.5706352,
+      "node_longitude": 77.1831568
+    },
+    {
+      "id": 37,
+      "name": "Customer 37 (South Extension Market)",
+      "locality": "South Extension Market",
+      "latitude": 28.5713449,
+      "longitude": 77.2174801,
+      "demand": 1,
+      "nearest_node_id": 10824802174,
+      "node_latitude": 28.5713449,
+      "node_longitude": 77.2174801
+    },
+    {
+      "id": 38,
+      "name": "Customer 38 (South Extension Market)",
+      "locality": "South Extension Market",
+      "latitude": 28.571343,
+      "longitude": 77.2173675,
+      "demand": 4,
+      "nearest_node_id": 10210393481,
+      "node_latitude": 28.571343,
+      "node_longitude": 77.2173675
+    },
+    {
+      "id": 39,
+      "name": "Customer 39 (Moti Bagh Commercial)",
+      "locality": "Moti Bagh Commercial",
+      "latitude": 28.5847605,
+      "longitude": 77.1726328,
+      "demand": 1,
+      "nearest_node_id": 13315701481,
+      "node_latitude": 28.5847605,
+      "node_longitude": 77.1726328
+    },
+    {
+      "id": 40,
+      "name": "Customer 40 (Moti Bagh Commercial)",
+      "locality": "Moti Bagh Commercial",
+      "latitude": 28.5842016,
+      "longitude": 77.1729499,
+      "demand": 3,
+      "nearest_node_id": 4231806631,
+      "node_latitude": 28.5842016,
+      "node_longitude": 77.1729499
+    },
+    {
+      "id": 41,
+      "name": "Customer 41 (Kalkaaji Market)",
+      "locality": "Kalkaaji Market",
+      "latitude": 28.5699065,
+      "longitude": 77.2169314,
+      "demand": 3,
+      "nearest_node_id": 448444083,
+      "node_latitude": 28.5699065,
+      "node_longitude": 77.2169314
+    },
+    {
+      "id": 42,
+      "name": "Customer 42 (Kalkaaji Market)",
+      "locality": "Kalkaaji Market",
+      "latitude": 28.5699026,
+      "longitude": 77.216835,
+      "demand": 5,
+      "nearest_node_id": 10242231168,
+      "node_latitude": 28.5699026,
+      "node_longitude": 77.216835
+    },
+    {
+      "id": 43,
+      "name": "Customer 43 (Munirka Market)",
+      "locality": "Munirka Market",
+      "latitude": 28.5704563,
+      "longitude": 77.1835907,
+      "demand": 3,
+      "nearest_node_id": 6642434604,
+      "node_latitude": 28.5704563,
+      "node_longitude": 77.1835907
+    },
+    {
+      "id": 44,
+      "name": "Customer 44 (Munirka Market)",
+      "locality": "Munirka Market",
+      "latitude": 28.5719359,
+      "longitude": 77.1823858,
+      "demand": 1,
+      "nearest_node_id": 1116427532,
+      "node_latitude": 28.5719359,
+      "node_longitude": 77.1823858
+    },
+    {
+      "id": 45,
+      "name": "Customer 45 (Chirag Delhi Junction)",
+      "locality": "Chirag Delhi Junction",
+      "latitude": 28.5686554,
+      "longitude": 77.2160542,
+      "demand": 4,
+      "nearest_node_id": 6435370145,
+      "node_latitude": 28.5686554,
+      "node_longitude": 77.2160542
+    },
+    {
+      "id": 46,
+      "name": "Customer 46 (Chirag Delhi Junction)",
+      "locality": "Chirag Delhi Junction",
+      "latitude": 28.5688286,
+      "longitude": 77.2160713,
+      "demand": 5,
+      "nearest_node_id": 6435370142,
+      "node_latitude": 28.5688286,
+      "node_longitude": 77.2160713
+    },
+    {
+      "id": 47,
+      "name": "Customer 47 (Panchsheel Park)",
+      "locality": "Panchsheel Park",
+      "latitude": 28.5654088,
+      "longitude": 77.2073877,
+      "demand": 1,
+      "nearest_node_id": 939278276,
+      "node_latitude": 28.5654088,
+      "node_longitude": 77.2073877
+    },
+    {
+      "id": 48,
+      "name": "Customer 48 (Panchsheel Park)",
+      "locality": "Panchsheel Park",
+      "latitude": 28.5663401,
+      "longitude": 77.2077185,
+      "demand": 4,
+      "nearest_node_id": 11843502154,
+      "node_latitude": 28.5663401,
+      "node_longitude": 77.2077185
+    },
+    {
+      "id": 49,
+      "name": "Customer 49 (Jangpura Hub)",
+      "locality": "Jangpura Hub",
+      "latitude": 28.5927757,
+      "longitude": 77.2397965,
+      "demand": 1,
+      "nearest_node_id": 1805872600,
+      "node_latitude": 28.5927757,
+      "node_longitude": 77.2397965
+    },
+    {
+      "id": 50,
+      "name": "Customer 50 (Jangpura Hub)",
+      "locality": "Jangpura Hub",
+      "latitude": 28.5933013,
+      "longitude": 77.2397975,
+      "demand": 5,
+      "nearest_node_id": 1805872543,
+      "node_latitude": 28.5933013,
+      "node_longitude": 77.2397975
+    }
+  ],
+  "vehicles": {
+    "list": [
+      {
+        "id": 0,
+        "home_depot_id": 0,
+        "capacity": 20
+      },
+      {
+        "id": 1,
+        "home_depot_id": 0,
+        "capacity": 20
+      },
+      {
+        "id": 2,
+        "home_depot_id": 0,
+        "capacity": 20
+      },
+      {
+        "id": 3,
+        "home_depot_id": 1,
+        "capacity": 20
+      },
+      {
+        "id": 4,
+        "home_depot_id": 1,
+        "capacity": 20
+      },
+      {
+        "id": 5,
+        "home_depot_id": 1,
+        "capacity": 20
+      },
+      {
+        "id": 6,
+        "home_depot_id": 2,
+        "capacity": 20
+      },
+      {
+        "id": 7,
+        "home_depot_id": 2,
+        "capacity": 20
+      },
+      {
+        "id": 8,
+        "home_depot_id": 3,
+        "capacity": 20
+      },
+      {
+        "id": 9,
+        "home_depot_id": 3,
+        "capacity": 20
+      }
+    ],
+    "count": 10,
+    "default_capacity": 20,
+    "max_route_duration_sec": 7200.0
+  },
+  "road_capacities": {
+    "primary": 15,
+    "secondary": 10,
+    "tertiary": 8,
+    "residential": 6,
+    "service": 4,
+    "default": 6
+  },
+  "road_speeds_kmh": {
+    "primary": 45.0,
+    "secondary": 35.0,
+    "tertiary": 30.0,
+    "residential": 20.0,
+    "service": 15.0,
+    "default": 20.0
+  }
+}
