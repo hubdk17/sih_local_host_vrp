@@ -1,0 +1,2 @@
+metric,qpso_mean_std,ga_mean_std,mean_gain_pct,wilcoxon_w,wilcoxon_p,mann_whitney_u,mann_whitney_p,effect_size_r,significance
+Total Distance (km),436.16 ± 20.16,719.02 ± 38.84,39.34,0.0,3.0518e-05,0.0,1.6959e-06,1.035,p < 0.001 (Statistically Significant ***)

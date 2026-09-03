@@ -1,0 +1,3 @@
+scenario,num_cust,num_veh,heuristic_dist_km,heuristic_ontime_pct,heuristic_cost_inr,qpso_dist_km,qpso_ontime_pct,qpso_cost_inr,qpso_runtime_sec,cost_saving_pct,ontime_gain_pct
+50_customers,50,6,477.6,100.0,14278.0,411.9,100.0,13955.0,1.42,2.26,0.0
+100_customers,100,10,874.51,99.0,26696.0,729.3,99.0,22737.0,2.99,14.83,0.0
