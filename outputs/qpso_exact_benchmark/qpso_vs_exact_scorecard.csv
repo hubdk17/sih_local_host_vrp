@@ -1,0 +1,4 @@
+scale,num_customers,num_vehicles,exact_distance_km,exact_runtime_sec,qpso_distance_km,qpso_runtime_sec,optimality_gap_pct,speedup_factor
+25_cust,25,4,169.32,15.01,192.12,1.05,13.46,14.3
+50_cust,50,6,228.82,30.0,247.75,1.65,8.27,18.2
+100_cust,100,10,326.84,45.0,417.05,3.31,27.6,13.6

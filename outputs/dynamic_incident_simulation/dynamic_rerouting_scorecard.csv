@@ -1,0 +1,5 @@
+strategy,dist_km,time_hrs,delay_hrs,cost_inr,runtime_sec,status
+Baseline (Normal Traffic),462.08,13.1,0.0,9289.0,0.0,Pre-Incident
+Strategy 1: Static Blind Routing,462.08,13.1,0.0,9289.0,0.0,Severe Bottleneck Delay
+Strategy 2: Classical GA Re-solve,513.44,14.33,1.2300000190734863,10403.0,14.5,Slow Re-solve (Stalled)
+Strategy 3: Dynamic Quantum QPSO,454.99,12.84,0.0,9135.0,0.022,Optimal Dynamic Bypass
