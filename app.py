@@ -21,7 +21,7 @@ from flask_cors import CORS
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 from solver_engine import (
     load_or_download_graph, build_dijkstra_matrices,
-    DeltaWellQPSO, ClassicalGABaseline, ExactSolver, CITY_GRAPHS
+    DeltaWellQPSO, ClassicalGABaseline, ExactSolver, HQGLSSolver, CITY_GRAPHS
 )
 import osmnx as ox
 
@@ -113,7 +113,7 @@ def _run_solve(job_id, data):
         num_vehicles = int(data.get("num_vehicles", 6))
         num_customers = min(int(data.get("num_customers", 50)), 200)
         capacity = int(data.get("capacity", 40))
-        algorithms = data.get("algorithms", ["qpso", "ga", "exact"])
+        algorithms = data.get("algorithms", ["hq_gls", "qpso", "ga", "exact"])
         seed = int(data.get("seed", 42))
 
         # Limit exact solver to 100 customers (OR-Tools Guided Local Search with 15s limit)
@@ -172,7 +172,17 @@ def _run_solve(job_id, data):
         }
 
         # 4. Run Algorithms
-        # QPSO
+        # Quantum HQ-GLS (SOTA Flagship Solver)
+        if "hq_gls" in algorithms:
+            jobs[job_id]["progress"] = "Running Quantum HQ-GLS (Quantum Tunneling + Cross-Exchange)..."
+            hqgls = HQGLSSolver(d_time, d_len, demands, num_vehicles, capacity,
+                                depot_coord, cust_coords, time_limit=3.0)
+            result = hqgls.solve()
+            result["route_coords"] = _routes_to_coords(result["routes"], depot_coord, cust_coords)
+            result["route_metrics"] = _compute_route_metrics(result["routes"], demands, d_len, d_time, capacity)
+            response["algorithms"]["hq_gls"] = result
+
+        # Delta-Well QPSO
         if "qpso" in algorithms:
             jobs[job_id]["progress"] = "Running Delta-Well QPSO optimization..."
             qpso = DeltaWellQPSO(d_time, d_len, demands, num_vehicles, capacity,

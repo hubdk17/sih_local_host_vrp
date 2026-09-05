@@ -12,18 +12,20 @@ let selectedCity = 'delhi';
 let convergenceChart = null;
 let bigConvergenceChart = null;
 let latestSimulationData = null;
-let activeManifestAlgo = 'exact';
+let activeManifestAlgo = 'hq_gls';
 
 const ALGO_COLORS = {
-    qpso:  '#10b981', // Emerald
-    ga:    '#ef4444', // Crimson
-    exact: '#f59e0b'  // Amber
+    hq_gls: '#00e5ff', // Electric Cyan (Flagship Quantum)
+    qpso:   '#10b981', // Emerald
+    ga:     '#ef4444', // Crimson
+    exact:  '#f59e0b'  // Amber
 };
 
 const ALGO_NAMES = {
-    qpso:  'Delta-Well QPSO',
-    ga:    'Classical Heuristic GA',
-    exact: 'Exact Solver (OR-Tools)'
+    hq_gls: 'Quantum HQ-GLS (SOTA)',
+    qpso:   'Delta-Well QPSO',
+    ga:     'Classical Heuristic GA',
+    exact:  'Exact Solver (OR-Tools)'
 };
 
 // Safe DOM text setter helper
@@ -38,9 +40,11 @@ function setElHtml(id, html) {
 }
 
 function selectAllAlgos() {
+    const h = document.getElementById('algoHQGLS');
     const q = document.getElementById('algoQPSO');
     const g = document.getElementById('algoGA');
     const e = document.getElementById('algoExact');
+    if (h) h.checked = true;
     if (q) q.checked = true;
     if (g) g.checked = true;
     if (e) e.checked = true;
@@ -213,10 +217,12 @@ async function runSimulation() {
     }
 
     const algorithms = [];
+    const hCheck = document.getElementById('algoHQGLS');
     const qCheck = document.getElementById('algoQPSO');
     const gCheck = document.getElementById('algoGA');
     const eCheck = document.getElementById('algoExact');
 
+    if (hCheck && hCheck.checked) algorithms.push('hq_gls');
     if (qCheck && qCheck.checked) algorithms.push('qpso');
     if (gCheck && gCheck.checked) algorithms.push('ga');
     if (eCheck && eCheck.checked) algorithms.push('exact');
@@ -344,8 +350,8 @@ function renderResults(data) {
                 const latlngs = routeCoords.map(p => [p.lat, p.lon]);
                 const polyline = L.polyline(latlngs, {
                     color: color,
-                    weight: key === 'qpso' ? 3.5 : 2.5,
-                    opacity: 0.85,
+                    weight: key === 'hq_gls' ? 4 : (key === 'qpso' ? 3.5 : 2.5),
+                    opacity: key === 'hq_gls' ? 0.95 : 0.85,
                     dashArray: key === 'ga' ? '8 6' : (key === 'exact' ? '4 4' : null)
                 }).addTo(map);
                 layers.push(polyline);
@@ -506,7 +512,7 @@ function renderComparisonMatrix(data) {
     let gaDist = (algos.ga && algos.ga.distance_km > 0) ? algos.ga.distance_km : null;
     let totalViolations = 0;
 
-    ['qpso', 'ga', 'exact'].forEach(k => {
+    ['hq_gls', 'qpso', 'ga', 'exact'].forEach(k => {
         const a = algos[k];
         if (a && a.distance_km > 0) {
             if (a.distance_km < bestDist) {
@@ -561,7 +567,7 @@ function renderComparisonMatrix(data) {
     const tbody = document.getElementById('compTableBody');
     if (tbody) {
         tbody.innerHTML = '';
-        const keys = ['qpso', 'ga', 'exact'];
+        const keys = ['hq_gls', 'qpso', 'ga', 'exact'];
 
         const tableRows = [
             {
@@ -680,6 +686,7 @@ function renderComparisonMatrix(data) {
                 render: (k) => {
                     const a = algos[k];
                     if (!a) return '—';
+                    if (k === 'hq_gls') return '<b>Quantum Tunneling + 2-Opt*</b> (Transverse Field)';
                     if (k === 'qpso') return '<b>50 Iterations</b> (Quantum Delta-Well)';
                     if (k === 'ga') return '<b>50 Generations</b> (Elitist GA)';
                     if (k === 'exact') return (a.distance_km > 0) ? '<b>Guided Local Search</b> (15s Bound)' : '—';
@@ -690,6 +697,7 @@ function renderComparisonMatrix(data) {
                 label: 'Algorithmic Paradigm',
                 desc: 'Mathematical and optimization methodology',
                 render: (k) => {
+                    if (k === 'hq_gls') return '<span style="color:#00e5ff; font-weight:700;">Quantum Tunneling Metaheuristic</span><br><span style="font-size:11px; color:#64748b;">Bloch Superposition + Inter-Route 2-Opt* + Cross-Exchange</span>';
                     if (k === 'qpso') return '<span style="color:#10b981; font-weight:600;">Quantum-Inspired Metaheuristic</span><br><span style="font-size:11px; color:#64748b;">Bloch Sphere Encoding + Delta Potential Well</span>';
                     if (k === 'ga') return '<span style="color:#ef4444; font-weight:600;">Classical Metaheuristic</span><br><span style="font-size:11px; color:#64748b;">Angular Sweep Clustering + Genetic TSP</span>';
                     if (k === 'exact') return '<span style="color:#f59e0b; font-weight:600;">Exact / Math Programming</span><br><span style="font-size:11px; color:#64748b;">Google OR-Tools Guided Local Search</span>';
@@ -945,19 +953,20 @@ function copyTableMarkdown() {
     }
 
     const algos = latestSimulationData.algorithms || {};
+    const h = algos.hq_gls || {};
     const q = algos.qpso || {};
     const g = algos.ga || {};
     const e = algos.exact || {};
 
     const md = [
         `### Multi-Algorithm VRP Optimization Benchmark Results`,
-        `| Metric | Delta-Well QPSO (Quantum) | Classical Heuristic GA | Exact Solver (OR-Tools) |`,
-        `| :--- | :--- | :--- | :--- |`,
-        `| **Fleet Distance (km)** | ${q.distance_km ? q.distance_km + ' km' : '—'} | ${g.distance_km ? g.distance_km + ' km' : '—'} | ${e.distance_km && e.distance_km > 0 ? e.distance_km + ' km' : (e.error || '—')} |`,
-        `| **Travel Time (hrs)** | ${q.time_sec ? (q.time_sec/3600).toFixed(2) + 'h' : '—'} | ${g.time_sec ? (g.time_sec/3600).toFixed(2) + 'h' : '—'} | ${e.time_sec && e.time_sec > 0 ? (e.time_sec/3600).toFixed(2) + 'h' : '—'} |`,
-        `| **Runtime (sec)** | ${q.runtime_sec !== undefined ? q.runtime_sec.toFixed(3) + 's' : '—'} | ${g.runtime_sec !== undefined ? g.runtime_sec.toFixed(3) + 's' : '—'} | ${e.runtime_sec !== undefined ? e.runtime_sec.toFixed(3) + 's' : '—'} |`,
-        `| **Constraint Violations** | ${q.violations !== undefined ? q.violations : '—'} | ${g.violations !== undefined ? g.violations : '—'} | ${e.violations !== undefined ? e.violations : '—'} |`,
-        `| **Active Vehicles** | ${q.route_metrics ? q.route_metrics.length : '—'} | ${g.route_metrics ? g.route_metrics.length : '—'} | ${e.route_metrics ? e.route_metrics.length : '—'} |`
+        `| Metric | Quantum HQ-GLS (SOTA) | Delta-Well QPSO (Quantum) | Classical Heuristic GA | Exact Solver (OR-Tools) |`,
+        `| :--- | :--- | :--- | :--- | :--- |`,
+        `| **Fleet Distance (km)** | ${h.distance_km ? h.distance_km + ' km' : '—'} | ${q.distance_km ? q.distance_km + ' km' : '—'} | ${g.distance_km ? g.distance_km + ' km' : '—'} | ${e.distance_km && e.distance_km > 0 ? e.distance_km + ' km' : (e.error || '—')} |`,
+        `| **Travel Time (hrs)** | ${h.time_sec ? (h.time_sec/3600).toFixed(2) + 'h' : '—'} | ${q.time_sec ? (q.time_sec/3600).toFixed(2) + 'h' : '—'} | ${g.time_sec ? (g.time_sec/3600).toFixed(2) + 'h' : '—'} | ${e.time_sec && e.time_sec > 0 ? (e.time_sec/3600).toFixed(2) + 'h' : '—'} |`,
+        `| **Runtime (sec)** | ${h.runtime_sec !== undefined ? h.runtime_sec.toFixed(3) + 's' : '—'} | ${q.runtime_sec !== undefined ? q.runtime_sec.toFixed(3) + 's' : '—'} | ${g.runtime_sec !== undefined ? g.runtime_sec.toFixed(3) + 's' : '—'} | ${e.runtime_sec !== undefined ? e.runtime_sec.toFixed(3) + 's' : '—'} |`,
+        `| **Constraint Violations** | ${h.violations !== undefined ? h.violations : '—'} | ${q.violations !== undefined ? q.violations : '—'} | ${g.violations !== undefined ? g.violations : '—'} | ${e.violations !== undefined ? e.violations : '—'} |`,
+        `| **Active Vehicles** | ${h.route_metrics ? h.route_metrics.length : '—'} | ${q.route_metrics ? q.route_metrics.length : '—'} | ${g.route_metrics ? g.route_metrics.length : '—'} | ${e.route_metrics ? e.route_metrics.length : '—'} |`
     ].join('\n');
 
     navigator.clipboard.writeText(md).then(() => {

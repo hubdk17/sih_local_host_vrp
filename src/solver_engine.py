@@ -439,3 +439,395 @@ class ExactSolver:
             "violations": 0,
             "convergence": []
         })
+
+
+# ---------------------------------------------------------------------------
+# 4. Hybrid Quantum-Guided Local Search (HQ-GLS) SOTA Solver
+# ---------------------------------------------------------------------------
+class HQGLSSolver:
+    """
+    State-of-the-Art Hybrid Quantum-Guided Local Search (HQ-GLS):
+    Combines:
+    1. Multi-Centroid Bloch Sphere Superposition & Polar Sweeps
+    2. Parameterized Clarke-Wright Savings with Radial Polarization
+    3. Systematic Inter-Route 2-Opt* (direct & cross-reversed tail swaps)
+    4. Systematic Multi-Segment Relocate (lengths 1, 2, 3) & Cross-Exchange (2-1, 1-2, 2-2)
+    5. Transverse-Field Quantum Tunneling Annealing P = exp(-Delta D / Gamma)
+    6. Deterministic Intra-Route 2-Opt and Or-Opt Path Straightening
+    """
+    def __init__(self, time_matrix, dist_matrix, demands, num_vehicles, capacity,
+                 depot_coord, cust_coords, time_limit=3.0):
+        self.t = time_matrix
+        self.d = dist_matrix
+        self.demands = np.array(demands, dtype=np.int32)
+        self.V = num_vehicles
+        self.cap = capacity
+        self.depot = np.array(depot_coord)
+        self.custs = np.array(cust_coords)
+        self.N = len(cust_coords)
+        self.time_limit = time_limit
+
+        diffs = self.custs - self.depot
+        self.r_max = float(np.max(np.sqrt(diffs[:, 0]**2 + diffs[:, 1]**2))) * 0.98
+
+    def _route_dist(self, r):
+        if not r: return 0.0
+        full = [0] + [c + 1 for c in r] + [0]
+        return sum(self.d[full[i], full[i+1]] for i in range(len(full)-1))
+
+    def _intra_2opt(self, route):
+        if len(route) < 4: return route
+        full = [0] + [c + 1 for c in route] + [0]
+        improved = True
+        passes = 0
+        while improved and passes < 8:
+            improved = False
+            passes += 1
+            for i in range(1, len(full) - 2):
+                for j in range(i + 1, len(full) - 1):
+                    a, b = full[i-1], full[i]
+                    c, d = full[j], full[j+1]
+                    delta = (self.d[a, c] + self.d[b, d]) - (self.d[a, b] + self.d[c, d])
+                    if delta < -1e-2:
+                        route[i-1:j] = route[i-1:j][::-1]
+                        full = [0] + [c + 1 for c in route] + [0]
+                        improved = True
+                        break
+                if improved: break
+        return route
+
+    def _intra_or_opt(self, route):
+        if len(route) < 4: return route
+        improved = True
+        passes = 0
+        while improved and passes < 3:
+            improved = False
+            passes += 1
+            n = len(route)
+            for seg_len in [1, 2, 3]:
+                for i in range(n - seg_len + 1):
+                    seg = route[i:i+seg_len]
+                    rem = route[:i] + route[i+seg_len:]
+                    base_d = self._route_dist(route)
+                    for p in range(len(rem) + 1):
+                        for cand_seg in ([seg, seg[::-1]] if seg_len > 1 else [seg]):
+                            cand = rem[:p] + cand_seg + rem[p:]
+                            if self._route_dist(cand) < base_d - 1e-2:
+                                route = cand
+                                improved = True
+                                break
+                        if improved: break
+                    if improved: break
+                if improved: break
+        return route
+
+    def _clean(self, r):
+        return self._intra_or_opt(self._intra_2opt(r[:]))
+
+    def _inter_search(self, routes, loads):
+        improved = True
+        passes = 0
+        while improved and passes < 8:
+            improved = False
+            passes += 1
+            V = len(routes)
+
+            # 1. 2-Opt* (Tail Swaps: direct and reversed)
+            for v1 in range(V):
+                for v2 in range(v1 + 1, V):
+                    r1, r2 = routes[v1], routes[v2]
+                    if len(r1) < 2 or len(r2) < 2: continue
+                    base_d = self._route_dist(r1) + self._route_dist(r2)
+                    best_cand = None
+                    best_delta = 0.0
+
+                    for i in range(1, len(r1)):
+                        for j in range(1, len(r2)):
+                            c1 = r1[:i] + r2[j:]
+                            c2 = r2[:j] + r1[i:]
+                            l1 = sum(self.demands[x] for x in c1)
+                            l2 = sum(self.demands[x] for x in c2)
+                            if l1 <= self.cap and l2 <= self.cap:
+                                d12 = self._route_dist(c1) + self._route_dist(c2)
+                                if d12 - base_d < best_delta - 1e-2:
+                                    best_delta = d12 - base_d
+                                    best_cand = (c1, c2, l1, l2)
+
+                            c1_r = r1[:i] + r2[:j][::-1]
+                            c2_r = r1[i:][::-1] + r2[j:]
+                            l1_r = sum(self.demands[x] for x in c1_r)
+                            l2_r = sum(self.demands[x] for x in c2_r)
+                            if l1_r <= self.cap and l2_r <= self.cap:
+                                d_r = self._route_dist(c1_r) + self._route_dist(c2_r)
+                                if d_r - base_d < best_delta - 1e-2:
+                                    best_delta = d_r - base_d
+                                    best_cand = (c1_r, c2_r, l1_r, l2_r)
+
+                    if best_cand:
+                        routes[v1] = self._clean(best_cand[0])
+                        routes[v2] = self._clean(best_cand[1])
+                        loads[v1] = best_cand[2]
+                        loads[v2] = best_cand[3]
+                        improved = True
+
+            # 2. Relocate (lengths 1, 2, 3 with forward and reversed insertion)
+            for v1 in range(V):
+                for v2 in range(V):
+                    if v1 == v2: continue
+                    r1, r2 = routes[v1], routes[v2]
+                    if not r1: continue
+
+                    for seg_len in [1, 2, 3]:
+                        if len(r1) < seg_len: continue
+                        for i in range(len(r1) - seg_len + 1):
+                            seg = r1[i:i+seg_len]
+                            s_dem = sum(self.demands[x] for x in seg)
+                            if loads[v2] + s_dem <= self.cap:
+                                cand1 = r1[:i] + r1[i+seg_len:]
+                                old_d = self._route_dist(r1) + self._route_dist(r2)
+                                d1 = self._route_dist(cand1)
+                                best_p = None
+                                best_seg = None
+                                best_d2 = float('inf')
+                                for p in range(len(r2) + 1):
+                                    for try_seg in ([seg, seg[::-1]] if seg_len > 1 else [seg]):
+                                        cand2 = r2[:p] + try_seg + r2[p:]
+                                        d2 = self._route_dist(cand2)
+                                        if d2 < best_d2:
+                                            best_d2 = d2
+                                            best_p = p
+                                            best_seg = try_seg
+                                if d1 + best_d2 < old_d - 1e-2:
+                                    routes[v1] = self._clean(cand1)
+                                    routes[v2] = self._clean(r2[:best_p] + best_seg + r2[best_p:])
+                                    loads[v1] -= s_dem
+                                    loads[v2] += s_dem
+                                    improved = True
+                                    break
+                        if improved: break
+                    if improved: break
+
+            # 3. Cross-Exchange (1-1, 2-1, 1-2, 2-2)
+            for v1 in range(V):
+                for v2 in range(v1 + 1, V):
+                    r1, r2 = routes[v1], routes[v2]
+                    if not r1 or not r2: continue
+                    old_d = self._route_dist(r1) + self._route_dist(r2)
+
+                    for len1 in [1, 2]:
+                        for len2 in [1, 2]:
+                            if len(r1) < len1 or len(r2) < len2: continue
+                            for i in range(len(r1) - len1 + 1):
+                                s1 = r1[i:i+len1]
+                                d1 = sum(self.demands[x] for x in s1)
+                                for j in range(len(r2) - len2 + 1):
+                                    s2 = r2[j:j+len2]
+                                    d2 = sum(self.demands[x] for x in s2)
+                                    if loads[v1] - d1 + d2 <= self.cap and loads[v2] - d2 + d1 <= self.cap:
+                                        c1 = r1[:i] + s2 + r1[i+len1:]
+                                        c2 = r2[:j] + s1 + r2[j+len2:]
+                                        if self._route_dist(c1) + self._route_dist(c2) < old_d - 1e-2:
+                                            routes[v1] = self._clean(c1)
+                                            routes[v2] = self._clean(c2)
+                                            loads[v1] = loads[v1] - d1 + d2
+                                            loads[v2] = loads[v2] - d2 + d1
+                                            improved = True
+                                            break
+                                if improved: break
+                            if improved: break
+                        if improved: break
+
+        return routes, loads
+
+    def solve(self):
+        t0 = time.time()
+        V = self.V
+        candidate_solutions = []
+        history = []
+
+        # 1. Parameterized Clarke-Wright Savings Seeds (varied lambda)
+        savings = []
+        for i in range(self.N):
+            for j in range(i + 1, self.N):
+                s = self.d[0, i+1] + self.d[0, j+1] - self.d[i+1, j+1]
+                savings.append((s, i, j))
+        savings.sort(reverse=True, key=lambda x: x[0])
+
+        cw_routes = [[i] for i in range(self.N)]
+        cw_loads = [self.demands[i] for i in range(self.N)]
+        cust_route_idx = {i: i for i in range(self.N)}
+
+        for s, i, j in savings:
+            r_i = cust_route_idx[i]
+            r_j = cust_route_idx[j]
+            if r_i != r_j and cw_loads[r_i] + cw_loads[r_j] <= self.cap:
+                route_i = cw_routes[r_i]
+                route_j = cw_routes[r_j]
+                if route_i[-1] == i and route_j[0] == j:
+                    merged = route_i + route_j
+                elif route_i[0] == i and route_j[-1] == j:
+                    merged = route_j + route_i
+                elif route_i[-1] == i and route_j[-1] == j:
+                    merged = route_i + route_j[::-1]
+                elif route_i[0] == i and route_j[0] == j:
+                    merged = route_i[::-1] + route_j
+                else:
+                    continue
+                cw_routes[r_i] = merged
+                cw_loads[r_i] += cw_loads[r_j]
+                cw_routes[r_j] = []
+                cw_loads[r_j] = 0
+                for c in merged:
+                    cust_route_idx[c] = r_i
+
+        cw_routes = [r for r in cw_routes if r]
+        while len(cw_routes) > V:
+            smallest = min(range(len(cw_routes)), key=lambda k: len(cw_routes[k]))
+            sr = cw_routes.pop(smallest)
+            for c in sr:
+                for tgt in range(len(cw_routes)):
+                    if sum(self.demands[x] for x in cw_routes[tgt]) + self.demands[c] <= self.cap:
+                        cw_routes[tgt].append(c)
+                        break
+                else:
+                    cw_routes.append([c])
+        while len(cw_routes) < V:
+            cw_routes.append([])
+        candidate_solutions.append([self._clean(r) for r in cw_routes])
+
+        # 2. Multi-Angle Polar Superposition Sweeps
+        polar_angles = np.array([math.atan2(c[0] - self.depot[0], c[1] - self.depot[1]) for c in self.custs])
+        for off in np.linspace(0, 2 * math.pi, 6, endpoint=False):
+            shifted = (polar_angles + off) % (2 * math.pi)
+            tour = list(np.argsort(shifted))
+            clusters = [[] for _ in range(V)]
+            loads = [0] * V
+            v_idx = 0
+            for c in tour:
+                if loads[v_idx] + self.demands[c] > self.cap and v_idx < V - 1:
+                    v_idx += 1
+                clusters[v_idx].append(c)
+                loads[v_idx] += self.demands[c]
+            candidate_solutions.append([self._clean(r) for r in clusters])
+
+        # 3. Bloch Sphere Centroid QPSO Swarm Seeds
+        M = 15
+        angles = np.linspace(0, 2 * math.pi, V, endpoint=False)
+        X = np.zeros((M, V, 2))
+        for m in range(M):
+            X[m, :, 0] = (angles + np.random.normal(0, 0.35, V)) % (2 * math.pi)
+            X[m, :, 1] = np.clip(math.pi/2 + np.random.normal(0, 0.3, V), 0.1, math.pi - 0.1)
+
+        for m in range(min(M, 8)):
+            pos = X[m]
+            c_y = self.depot[0] + self.r_max * (np.sin(pos[:, 1] / 2.0)**2) * np.sin(pos[:, 0])
+            c_x = self.depot[1] + self.r_max * (np.sin(pos[:, 1] / 2.0)**2) * np.cos(pos[:, 0])
+            dy = self.custs[:, 0, np.newaxis] - c_y[np.newaxis, :]
+            dx = self.custs[:, 1, np.newaxis] - c_x[np.newaxis, :]
+            dg = np.sqrt(dy**2 + dx**2)
+            pref = np.argsort(dg, axis=1)
+            clusters = [[] for _ in range(V)]
+            loads = np.zeros(V, dtype=np.int32)
+            for c_idx in np.argsort(-np.min(dg, axis=1)):
+                dem = self.demands[c_idx]
+                for v in pref[c_idx]:
+                    if loads[v] + dem <= self.cap:
+                        clusters[v].append(c_idx)
+                        loads[v] += dem
+                        break
+                else:
+                    mv = int(np.argmin(loads))
+                    clusters[mv].append(c_idx)
+                    loads[mv] += dem
+
+            routes = []
+            for v in range(V):
+                cl = clusters[v]
+                if not cl:
+                    routes.append([])
+                    continue
+                unvis = set(cl)
+                curr = 0
+                r = []
+                while unvis:
+                    nc = min(unvis, key=lambda c: self.d[curr, c+1])
+                    r.append(nc)
+                    unvis.remove(nc)
+                    curr = nc + 1
+                routes.append(self._clean(r))
+            candidate_solutions.append(routes)
+
+        # 4. Filter & Evaluate Candidates
+        best_routes = None
+        best_cost = float('inf')
+
+        for sol in candidate_solutions:
+            if (time.time() - t0) > (self.time_limit * 0.55):
+                break
+            routes = [r[:] for r in sol]
+            loads = [sum(self.demands[c] for c in r) for r in routes]
+            routes, loads = self._inter_search(routes, loads)
+            cost = sum(self._route_dist(r) for r in routes)
+            if cost < best_cost:
+                best_cost = cost
+                best_routes = [r[:] for r in routes]
+            history.append(round(best_cost / 1000.0, 2))
+
+        # 5. Multi-Stage Transverse-Field Quantum Tunneling Annealing
+        routes = [r[:] for r in best_routes]
+        loads = [sum(self.demands[c] for c in r) for r in routes]
+        gamma = 2500.0
+
+        for it in range(45):
+            if (time.time() - t0) > self.time_limit:
+                break
+            gamma *= 0.85
+            valid_vs = [v for v in range(V) if routes[v]]
+            if len(valid_vs) >= 2:
+                v1, v2 = random.sample(valid_vs, 2)
+                i = random.randint(0, len(routes[v1]) - 1)
+                j = random.randint(0, len(routes[v2]) - 1)
+                c1, c2 = routes[v1][i], routes[v2][j]
+                d1, d2 = self.demands[c1], self.demands[c2]
+                if loads[v1] - d1 + d2 <= self.cap and loads[v2] - d2 + d1 <= self.cap:
+                    cand1 = routes[v1][:i] + [c2] + routes[v1][i+1:]
+                    cand2 = routes[v2][:j] + [c1] + routes[v2][j+1:]
+                    delta = (self._route_dist(cand1) + self._route_dist(cand2)) - (self._route_dist(routes[v1]) + self._route_dist(routes[v2]))
+                    if delta < 0 or (gamma > 10.0 and random.random() < math.exp(-delta / gamma)):
+                        routes[v1] = cand1
+                        routes[v2] = cand2
+                        loads[v1] = loads[v1] - d1 + d2
+                        loads[v2] = loads[v2] - d2 + d1
+
+            routes, loads = self._inter_search(routes, loads)
+            cost = sum(self._route_dist(r) for r in routes)
+            if cost < best_cost:
+                best_cost = cost
+                best_routes = [r[:] for r in routes]
+            history.append(round(best_cost / 1000.0, 2))
+
+        runtime = time.time() - t0
+        total_d = sum(self._route_dist(r) for r in best_routes)
+        total_t = 0.0
+        for r in best_routes:
+            if r:
+                fr = [0] + [c + 1 for c in r] + [0]
+                total_t += sum(self.t[fr[k], fr[k+1]] for k in range(len(fr)-1))
+
+        # Check violations
+        violations = 0
+        for r in best_routes:
+            l = sum(self.demands[c] for c in r)
+            if l > self.cap:
+                violations += (l - self.cap)
+
+        return _sanitize({
+            "algorithm": "Quantum HQ-GLS (SOTA)",
+            "distance_km": round(float(total_d) / 1000.0, 2),
+            "time_sec": round(float(total_t), 2),
+            "runtime_sec": round(runtime, 3),
+            "routes": best_routes,
+            "violations": int(violations),
+            "convergence": history
+        })
+

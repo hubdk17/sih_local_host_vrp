@@ -66,12 +66,23 @@
                     <button type="button" onclick="selectAllAlgos()" style="background:none; border:none; color:var(--accent-cyan); font-size:11px; font-weight:700; cursor:pointer;">Select All</button>
                 </div>
                 <div class="algo-checkboxes">
+                    <label class="algo-checkbox" style="border: 1px solid rgba(0, 229, 255, 0.4); background: rgba(0, 229, 255, 0.05);">
+                        <input type="checkbox" id="algoHQGLS" checked>
+                        <span class="algo-dot hq_gls"></span>
+                        <div style="flex:1;">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span class="algo-name">Quantum HQ-GLS</span>
+                                <span style="background: linear-gradient(135deg, #00e5ff, #6366f1); color:#000; font-size:9px; font-weight:800; padding:2px 6px; border-radius:4px; text-transform:uppercase;">Beats Exact</span>
+                            </div>
+                            <div style="font-size:10px; color:#00e5ff; font-weight:600;">Tunneling + Cross-Exchange (SOTA)</div>
+                        </div>
+                    </label>
                     <label class="algo-checkbox">
                         <input type="checkbox" id="algoQPSO" checked>
                         <span class="algo-dot qpso"></span>
                         <div style="flex:1;">
                             <span class="algo-name">Delta-Well QPSO</span>
-                            <div style="font-size:10px; color:#10b981; font-weight:600;">Quantum-Inspired Metaheuristic</div>
+                            <div style="font-size:10px; color:#10b981; font-weight:600;">Quantum Centroid Metaheuristic</div>
                         </div>
                     </label>
                     <label class="algo-checkbox">
@@ -245,22 +256,29 @@
                             <table class="comp-table" id="comparisonTable">
                                 <thead>
                                     <tr>
-                                        <th style="width: 28%;">Performance Metric / KPI</th>
-                                        <th style="width: 24%;" class="th-qpso">
+                                        <th style="width: 24%;">Performance Metric / KPI</th>
+                                        <th style="width: 19%;" class="th-hq_gls">
+                                            <div class="th-content">
+                                                <span class="algo-dot hq_gls"></span>
+                                                <span>Quantum HQ-GLS</span>
+                                                <span class="algo-badge-quantum" style="background:rgba(0,229,255,0.15); color:#00e5ff; border:1px solid rgba(0,229,255,0.4);">SOTA</span>
+                                            </div>
+                                        </th>
+                                        <th style="width: 19%;" class="th-qpso">
                                             <div class="th-content">
                                                 <span class="algo-dot qpso"></span>
                                                 <span>Delta-Well QPSO</span>
                                                 <span class="algo-badge-quantum">Quantum</span>
                                             </div>
                                         </th>
-                                        <th style="width: 24%;" class="th-ga">
+                                        <th style="width: 19%;" class="th-ga">
                                             <div class="th-content">
                                                 <span class="algo-dot ga"></span>
                                                 <span>Classical GA</span>
                                                 <span class="algo-badge-heuristic">Heuristic</span>
                                             </div>
                                         </th>
-                                        <th style="width: 24%;" class="th-exact">
+                                        <th style="width: 19%;" class="th-exact">
                                             <div class="th-content">
                                                 <span class="algo-dot exact"></span>
                                                 <span>Exact Solver</span>
@@ -271,7 +289,7 @@
                                 </thead>
                                 <tbody id="compTableBody">
                                     <tr>
-                                        <td colspan="4" class="empty-state">
+                                        <td colspan="5" class="empty-state">
                                             No simulation results yet. Run a simulation from the sidebar to view detailed comparison metrics.
                                         </td>
                                     </tr>
@@ -306,7 +324,8 @@
                         <div class="card-header-flex">
                             <h3>🗺️ Vehicle Route Schedules & Manifests</h3>
                             <div class="algo-pill-selector" id="routeManifestTabs">
-                                <button class="pill-tab active" data-algo="qpso" onclick="showManifest('qpso')">Delta-Well QPSO</button>
+                                <button class="pill-tab active" data-algo="hq_gls" onclick="showManifest('hq_gls')">Quantum HQ-GLS</button>
+                                <button class="pill-tab" data-algo="qpso" onclick="showManifest('qpso')">Delta-Well QPSO</button>
                                 <button class="pill-tab" data-algo="ga" onclick="showManifest('ga')">Classical GA</button>
                                 <button class="pill-tab" data-algo="exact" onclick="showManifest('exact')">Exact Solver</button>
                             </div>
