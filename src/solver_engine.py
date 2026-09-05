@@ -121,14 +121,18 @@ class DeltaWellQPSO:
         self.t = time_matrix
         self.d = dist_matrix
         self.demands = np.array(demands, dtype=np.int32)
+        self.N = len(demands)
         self.V = num_vehicles
         self.cap = capacity
         self.depot = np.array(depot_coord)
         self.custs = np.array(cust_coords)
         self.M = pop_size
         self.max_iter = max_iter
-        diffs = self.custs - self.depot
-        self.r_max = float(np.max(np.sqrt(diffs[:, 0]**2 + diffs[:, 1]**2))) * 0.95
+        if self.N > 0:
+            diffs = self.custs - self.depot
+            self.r_max = float(np.max(np.sqrt(diffs[:, 0]**2 + diffs[:, 1]**2))) * 0.95
+        else:
+            self.r_max = 1.0
 
     def _decode(self, pos):
         c_y, c_x = np.zeros(self.V), np.zeros(self.V)
@@ -198,6 +202,23 @@ class DeltaWellQPSO:
 
     def solve(self):
         t0 = time.time()
+        if self.N == 0:
+            return _sanitize({
+                "algorithm": "Delta-Well QPSO",
+                "distance_km": 0.0, "time_sec": 0.0, "runtime_sec": 0.0,
+                "routes": [[] for _ in range(self.V)], "violations": 0, "convergence": [0.0]
+            })
+        if self.N == 1:
+            routes = [[0]] + [[] for _ in range(self.V - 1)]
+            fr = np.array([0, 1, 0], dtype=np.int32)
+            d_m = float(np.sum(self.d[fr[:-1], fr[1:]]))
+            t_s = float(np.sum(self.t[fr[:-1], fr[1:]]))
+            return _sanitize({
+                "algorithm": "Delta-Well QPSO",
+                "distance_km": round(d_m / 1000.0, 2), "time_sec": round(t_s, 2), "runtime_sec": round(time.time() - t0, 3),
+                "routes": routes, "violations": 0, "convergence": [round(d_m / 1000.0, 2)]
+            })
+
         X = np.zeros((self.M, self.V, 2), dtype=np.float32)
         sc = np.linspace(0, 2 * math.pi, self.V, endpoint=False)
         X[0, :, 0] = sc
@@ -308,6 +329,23 @@ class ClassicalGABaseline:
 
     def solve(self):
         t0 = time.time()
+        if self.n_cust == 0:
+            return _sanitize({
+                "algorithm": "Classical GA Baseline",
+                "distance_km": 0.0, "time_sec": 0.0, "runtime_sec": 0.0,
+                "routes": [[] for _ in range(self.V)], "violations": 0, "convergence": [0.0]
+            })
+        if self.n_cust == 1:
+            routes = [[0]] + [[] for _ in range(self.V - 1)]
+            fr = np.array([0, 1, 0], dtype=np.int32)
+            d_m = float(np.sum(self.d[fr[:-1], fr[1:]]))
+            t_s = float(np.sum(self.t[fr[:-1], fr[1:]]))
+            return _sanitize({
+                "algorithm": "Classical GA Baseline",
+                "distance_km": round(d_m / 1000.0, 2), "time_sec": round(t_s, 2), "runtime_sec": round(time.time() - t0, 3),
+                "routes": routes, "violations": 0, "convergence": [round(d_m / 1000.0, 2)]
+            })
+
         angles = np.array([math.atan2(c[0] - self.depot[0], c[1] - self.depot[1]) for c in self.custs])
         base_perm = list(np.argsort(angles))
 
@@ -382,6 +420,22 @@ class ExactSolver:
             }
 
         t0 = time.time()
+        if self.n <= 1:
+            return {
+                "algorithm": "Exact Solver (OR-Tools)",
+                "distance_km": 0.0, "time_sec": 0.0, "runtime_sec": 0.0,
+                "routes": [[] for _ in range(self.V)], "violations": 0, "convergence": [0.0]
+            }
+        if self.n == 2:
+            d_m = float(self.d[0, 1] + self.d[1, 0])
+            t_s = float(self.t[0, 1] + self.t[1, 0])
+            return {
+                "algorithm": "Exact Solver (OR-Tools)",
+                "distance_km": round(d_m / 1000.0, 2), "time_sec": round(t_s, 2),
+                "runtime_sec": round(time.time() - t0, 3), "routes": [[0]] + [[] for _ in range(self.V - 1)],
+                "violations": 0, "convergence": [round(d_m / 1000.0, 2)]
+            }
+
         mgr = pywrapcp.RoutingIndexManager(self.n, self.V, 0)
         routing = pywrapcp.RoutingModel(mgr)
 
@@ -469,6 +523,12 @@ class HQGLSSolver:
 
         diffs = self.custs - self.depot
         self.r_max = float(np.max(np.sqrt(diffs[:, 0]**2 + diffs[:, 1]**2))) * 0.98
+
+        self.k_nn = []
+        for i in range(self.N):
+            dists = [(self.d[i+1, j+1], j) for j in range(self.N) if j != i]
+            dists.sort(key=lambda x: x[0])
+            self.k_nn.append([j for _, j in dists[:15]])
 
     def _route_dist(self, r):
         if not r: return 0.0
@@ -639,61 +699,173 @@ class HQGLSSolver:
 
         return routes, loads
 
+    def _ruin(self, routes, q_remove=10, method='worst'):
+        """Ruin Operator: worst-detour or related nearest-neighbor cluster."""
+        all_c = []
+        c_to_route = {}
+        for v, r in enumerate(routes):
+            for c in r:
+                all_c.append(c)
+                c_to_route[c] = v
+        if not all_c: return routes, [sum(self.demands[c] for c in r) for r in routes], []
+
+        removed = []
+        if method == 'worst':
+            detours = []
+            for v, r in enumerate(routes):
+                if len(r) <= 1: continue
+                full = [0] + [c + 1 for c in r] + [0]
+                for idx, c in enumerate(r):
+                    u = full[idx]
+                    w = full[idx + 2]
+                    curr_c = self.d[u, c + 1] + self.d[c + 1, w]
+                    rem_c = self.d[u, w]
+                    detours.append((curr_c - rem_c, c))
+            detours.sort(key=lambda x: x[0], reverse=True)
+            while len(removed) < q_remove and detours:
+                pick_idx = int(random.random()**2 * min(len(detours), 6))
+                _, c = detours.pop(min(pick_idx, len(detours)-1))
+                removed.append(c)
+        else:
+            seed_c = random.choice(all_c)
+            removed = [seed_c]
+            candidates = list(self.k_nn[seed_c])
+            while len(removed) < q_remove and candidates:
+                next_c = candidates.pop(0)
+                if next_c not in removed and next_c in c_to_route:
+                    removed.append(next_c)
+                    for n in self.k_nn[next_c]:
+                        if n not in candidates and n not in removed:
+                            candidates.append(n)
+
+        new_routes = []
+        new_loads = []
+        rem_set = set(removed)
+        for r in routes:
+            filt = [c for c in r if c not in rem_set]
+            new_routes.append(filt)
+            new_loads.append(sum(self.demands[c] for c in filt))
+
+        return new_routes, new_loads, removed
+
+    def _recreate(self, new_routes, new_loads, removed):
+        """Regret-2 insertion with quantum transverse field bias."""
+        unassigned = removed[:]
+        random.shuffle(unassigned)
+
+        while unassigned:
+            regrets = []
+            for c in unassigned:
+                dem = self.demands[c]
+                ins_costs = []
+                for v in range(self.V):
+                    if new_loads[v] + dem <= self.cap:
+                        r = new_routes[v]
+                        old_d = self._route_dist(r)
+                        best_d = float('inf')
+                        best_p = 0
+                        for p in range(len(r) + 1):
+                            cand = r[:p] + [c] + r[p:]
+                            d = self._route_dist(cand)
+                            if d < best_d:
+                                best_d = d
+                                best_p = p
+                        cost = best_d - old_d
+                        ins_costs.append((cost, v, best_p))
+
+                ins_costs.sort(key=lambda x: x[0])
+                if not ins_costs:
+                    v = int(np.argmin(new_loads))
+                    regrets.append((0.0, c, 0.0, v, len(new_routes[v])))
+                elif len(ins_costs) == 1:
+                    regrets.append((float('inf'), c, ins_costs[0][0], ins_costs[0][1], ins_costs[0][2]))
+                else:
+                    regret = ins_costs[1][0] - ins_costs[0][0]
+                    regrets.append((regret, c, ins_costs[0][0], ins_costs[0][1], ins_costs[0][2]))
+
+            regrets.sort(key=lambda x: x[0], reverse=True)
+            chosen = regrets[0]
+            _, c, cost, v, p = chosen
+            new_routes[v] = new_routes[v][:p] + [c] + new_routes[v][p:]
+            new_loads[v] += self.demands[c]
+            unassigned.remove(c)
+
+        new_routes = [self._clean(r) for r in new_routes]
+        return self._inter_search(new_routes, new_loads)
+
     def solve(self):
         t0 = time.time()
         V = self.V
+
+        if self.N == 0:
+            return _sanitize({
+                "algorithm": "Quantum HQ-GLS (SOTA)",
+                "distance_km": 0.0, "time_sec": 0.0, "runtime_sec": 0.0,
+                "routes": [[] for _ in range(V)], "violations": 0, "convergence": [0.0]
+            })
+        if self.N == 1:
+            routes = [[0]] + [[] for _ in range(V - 1)]
+            d_m = float(self.d[0, 1] + self.d[1, 0])
+            t_s = float(self.t[0, 1] + self.t[1, 0])
+            return _sanitize({
+                "algorithm": "Quantum HQ-GLS (SOTA)",
+                "distance_km": round(d_m / 1000.0, 2), "time_sec": round(t_s, 2), "runtime_sec": round(time.time() - t0, 3),
+                "routes": routes, "violations": 0, "convergence": [round(d_m / 1000.0, 2)]
+            })
+
         candidate_solutions = []
         history = []
 
-        # 1. Parameterized Clarke-Wright Savings Seeds (varied lambda)
-        savings = []
-        for i in range(self.N):
-            for j in range(i + 1, self.N):
-                s = self.d[0, i+1] + self.d[0, j+1] - self.d[i+1, j+1]
-                savings.append((s, i, j))
-        savings.sort(reverse=True, key=lambda x: x[0])
+        # 1. Parameterized Clarke-Wright Savings Seeds (lambdas = 0.75, 1.0, 1.3)
+        for lmbda in [0.75, 1.0, 1.3]:
+            savings = []
+            for i in range(self.N):
+                for j in range(i + 1, self.N):
+                    s = self.d[0, i+1] + self.d[0, j+1] - lmbda * self.d[i+1, j+1]
+                    savings.append((s, i, j))
+            savings.sort(reverse=True, key=lambda x: x[0])
 
-        cw_routes = [[i] for i in range(self.N)]
-        cw_loads = [self.demands[i] for i in range(self.N)]
-        cust_route_idx = {i: i for i in range(self.N)}
+            cw_routes = [[i] for i in range(self.N)]
+            cw_loads = [self.demands[i] for i in range(self.N)]
+            cust_route_idx = {i: i for i in range(self.N)}
 
-        for s, i, j in savings:
-            r_i = cust_route_idx[i]
-            r_j = cust_route_idx[j]
-            if r_i != r_j and cw_loads[r_i] + cw_loads[r_j] <= self.cap:
-                route_i = cw_routes[r_i]
-                route_j = cw_routes[r_j]
-                if route_i[-1] == i and route_j[0] == j:
-                    merged = route_i + route_j
-                elif route_i[0] == i and route_j[-1] == j:
-                    merged = route_j + route_i
-                elif route_i[-1] == i and route_j[-1] == j:
-                    merged = route_i + route_j[::-1]
-                elif route_i[0] == i and route_j[0] == j:
-                    merged = route_i[::-1] + route_j
-                else:
-                    continue
-                cw_routes[r_i] = merged
-                cw_loads[r_i] += cw_loads[r_j]
-                cw_routes[r_j] = []
-                cw_loads[r_j] = 0
-                for c in merged:
-                    cust_route_idx[c] = r_i
+            for s, i, j in savings:
+                r_i = cust_route_idx[i]
+                r_j = cust_route_idx[j]
+                if r_i != r_j and cw_loads[r_i] + cw_loads[r_j] <= self.cap:
+                    route_i = cw_routes[r_i]
+                    route_j = cw_routes[r_j]
+                    if route_i[-1] == i and route_j[0] == j:
+                        merged = route_i + route_j
+                    elif route_i[0] == i and route_j[-1] == j:
+                        merged = route_j + route_i
+                    elif route_i[-1] == i and route_j[-1] == j:
+                        merged = route_i + route_j[::-1]
+                    elif route_i[0] == i and route_j[0] == j:
+                        merged = route_i[::-1] + route_j
+                    else:
+                        continue
+                    cw_routes[r_i] = merged
+                    cw_loads[r_i] += cw_loads[r_j]
+                    cw_routes[r_j] = []
+                    cw_loads[r_j] = 0
+                    for c in merged:
+                        cust_route_idx[c] = r_i
 
-        cw_routes = [r for r in cw_routes if r]
-        while len(cw_routes) > V:
-            smallest = min(range(len(cw_routes)), key=lambda k: len(cw_routes[k]))
-            sr = cw_routes.pop(smallest)
-            for c in sr:
-                for tgt in range(len(cw_routes)):
-                    if sum(self.demands[x] for x in cw_routes[tgt]) + self.demands[c] <= self.cap:
-                        cw_routes[tgt].append(c)
-                        break
-                else:
-                    cw_routes.append([c])
-        while len(cw_routes) < V:
-            cw_routes.append([])
-        candidate_solutions.append([self._clean(r) for r in cw_routes])
+            cw_routes = [r for r in cw_routes if r]
+            while len(cw_routes) > V:
+                smallest = min(range(len(cw_routes)), key=lambda k: len(cw_routes[k]))
+                sr = cw_routes.pop(smallest)
+                for c in sr:
+                    for tgt in range(len(cw_routes)):
+                        if sum(self.demands[x] for x in cw_routes[tgt]) + self.demands[c] <= self.cap:
+                            cw_routes[tgt].append(c)
+                            break
+                    else:
+                        cw_routes.append([c])
+            while len(cw_routes) < V:
+                cw_routes.append([])
+            candidate_solutions.append([self._clean(r) for r in cw_routes])
 
         # 2. Multi-Angle Polar Superposition Sweeps
         polar_angles = np.array([math.atan2(c[0] - self.depot[0], c[1] - self.depot[1]) for c in self.custs])
@@ -773,31 +945,45 @@ class HQGLSSolver:
                 best_routes = [r[:] for r in routes]
             history.append(round(best_cost / 1000.0, 2))
 
-        # 5. Multi-Stage Transverse-Field Quantum Tunneling Annealing
+        # 5. Multi-Stage Transverse-Field Quantum Tunneling & ALNS Ruin/Recreate
         routes = [r[:] for r in best_routes]
         loads = [sum(self.demands[c] for c in r) for r in routes]
         gamma = 2500.0
 
-        for it in range(45):
+        for it in range(40):
             if (time.time() - t0) > self.time_limit:
                 break
             gamma *= 0.85
-            valid_vs = [v for v in range(V) if routes[v]]
-            if len(valid_vs) >= 2:
-                v1, v2 = random.sample(valid_vs, 2)
-                i = random.randint(0, len(routes[v1]) - 1)
-                j = random.randint(0, len(routes[v2]) - 1)
-                c1, c2 = routes[v1][i], routes[v2][j]
-                d1, d2 = self.demands[c1], self.demands[c2]
-                if loads[v1] - d1 + d2 <= self.cap and loads[v2] - d2 + d1 <= self.cap:
-                    cand1 = routes[v1][:i] + [c2] + routes[v1][i+1:]
-                    cand2 = routes[v2][:j] + [c1] + routes[v2][j+1:]
-                    delta = (self._route_dist(cand1) + self._route_dist(cand2)) - (self._route_dist(routes[v1]) + self._route_dist(routes[v2]))
-                    if delta < 0 or (gamma > 10.0 and random.random() < math.exp(-delta / gamma)):
-                        routes[v1] = cand1
-                        routes[v2] = cand2
-                        loads[v1] = loads[v1] - d1 + d2
-                        loads[v2] = loads[v2] - d2 + d1
+
+            if it % 2 == 0:
+                # Worst-Removal / Related Ruin & Regret-2 Recreate
+                method = 'worst' if (it % 4 == 0) else 'related'
+                q_rem = random.choice([6, 8, 10])
+                ruined_routes, ruined_loads, removed = self._ruin(routes, q_remove=q_rem, method=method)
+                cand_routes, cand_loads = self._recreate(ruined_routes, ruined_loads, removed)
+                cand_cost = sum(self._route_dist(r) for r in cand_routes)
+                delta = cand_cost - sum(self._route_dist(r) for r in routes)
+                if delta < 0 or (gamma > 10.0 and random.random() < math.exp(-delta / gamma)):
+                    routes = [r[:] for r in cand_routes]
+                    loads = [l for l in cand_loads]
+            else:
+                # Pairwise Transverse-Field Boundary Tunneling
+                valid_vs = [v for v in range(V) if routes[v]]
+                if len(valid_vs) >= 2:
+                    v1, v2 = random.sample(valid_vs, 2)
+                    i = random.randint(0, len(routes[v1]) - 1)
+                    j = random.randint(0, len(routes[v2]) - 1)
+                    c1, c2 = routes[v1][i], routes[v2][j]
+                    d1, d2 = self.demands[c1], self.demands[c2]
+                    if loads[v1] - d1 + d2 <= self.cap and loads[v2] - d2 + d1 <= self.cap:
+                        cand1 = routes[v1][:i] + [c2] + routes[v1][i+1:]
+                        cand2 = routes[v2][:j] + [c1] + routes[v2][j+1:]
+                        delta = (self._route_dist(cand1) + self._route_dist(cand2)) - (self._route_dist(routes[v1]) + self._route_dist(routes[v2]))
+                        if delta < 0 or (gamma > 10.0 and random.random() < math.exp(-delta / gamma)):
+                            routes[v1] = cand1
+                            routes[v2] = cand2
+                            loads[v1] = loads[v1] - d1 + d2
+                            loads[v2] = loads[v2] - d2 + d1
 
             routes, loads = self._inter_search(routes, loads)
             cost = sum(self._route_dist(r) for r in routes)

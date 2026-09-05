@@ -6,6 +6,7 @@
 // ---- Global State ----
 let map = null;
 let depotMarker = null;
+let depotMarkers = [];
 let customerMarkers = [];
 let routeLayers = {};
 let selectedCity = 'delhi';
@@ -185,6 +186,7 @@ function placeDepot(lat, lon) {
 // ---- Slider Setup ----
 function initSliders() {
     const sliders = [
+        { id: 'numDepots', display: 'depotVal' },
         { id: 'numVehicles', display: 'vehVal' },
         { id: 'numCustomers', display: 'custVal' },
         { id: 'capacity', display: 'capVal' },
@@ -236,6 +238,7 @@ async function runSimulation() {
         city_key: selectedCity || null,
         depot_lat: depotLat,
         depot_lon: depotLon,
+        num_depots: parseInt(document.getElementById('numDepots')?.value || '1'),
         num_vehicles: parseInt(document.getElementById('numVehicles').value),
         num_customers: parseInt(document.getElementById('numCustomers').value),
         capacity: parseInt(document.getElementById('capacity').value),
@@ -307,11 +310,31 @@ function renderResults(data) {
     latestSimulationData = data;
 
     try {
-        // 1. Plot customers on map
+        // 1. Plot Depots on map
+        depotMarkers.forEach(m => map.removeLayer(m));
+        depotMarkers = [];
+
+        if (data.depots && data.depots.length > 1) {
+            if (depotMarker) { map.removeLayer(depotMarker); depotMarker = null; }
+            data.depots.forEach((d, idx) => {
+                const isMain = (idx === 0);
+                const icon = L.divIcon({
+                    html: `<div class="multi-depot-pin" style="${isMain ? 'background:linear-gradient(135deg,#6366f1,#00e5ff);' : ''}">D${d.id + 1}</div>`,
+                    className: '',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
+                });
+                const m = L.marker([d.lat, d.lon], { icon }).addTo(map)
+                    .bindPopup(`<b>${d.name}</b><br>Coordinates: ${d.lat.toFixed(4)}, ${d.lon.toFixed(4)}`);
+                depotMarkers.push(m);
+            });
+        }
+
+        // 2. Plot customers on map
         if (data.customers && map) {
             data.customers.forEach((c, i) => {
                 const icon = L.divIcon({
-                    html: `<div style="
+                    html: `<div class="customer-pin" id="cust-pin-${i}" style="
                         width:11px; height:11px; border-radius:50%;
                         background:#38bdf8; border:2px solid #0f172a;
                         box-shadow: 0 0 6px rgba(56,189,248,0.7);
@@ -326,14 +349,17 @@ function renderResults(data) {
                 customerMarkers.push(m);
             });
 
-            // Fit map bounds
-            if (data.depot) {
-                const allPts = [[data.depot.lat, data.depot.lon], ...data.customers.map(c => [c.lat, c.lon])];
+            // Fit map bounds across all depots and customers
+            const allDepotPts = (data.depots && data.depots.length > 0)
+                ? data.depots.map(d => [d.lat, d.lon])
+                : (data.depot ? [[data.depot.lat, data.depot.lon]] : []);
+            const allPts = [...allDepotPts, ...data.customers.map(c => [c.lat, c.lon])];
+            if (allPts.length > 0) {
                 map.fitBounds(allPts, { padding: [50, 50] });
             }
         }
 
-        // 2. Draw routes for each algorithm
+        // 3. Draw routes for each algorithm with interactive hover inspection
         const algos = data.algorithms || {};
         const algoKeys = Object.keys(algos);
         const togglesEl = document.getElementById('routeToggles');
@@ -346,14 +372,60 @@ function renderResults(data) {
             const color = ALGO_COLORS[key] || '#888';
             const layers = [];
 
-            algo.route_coords.forEach((routeCoords) => {
+            algo.route_coords.forEach((routeCoords, vIdx) => {
                 const latlngs = routeCoords.map(p => [p.lat, p.lon]);
+                const metric = (algo.route_metrics && algo.route_metrics[vIdx]) ? algo.route_metrics[vIdx] : null;
+                const depotLabel = metric ? (metric.depot_name || `Depot ${metric.depot_id}`) : 'Depot';
+
                 const polyline = L.polyline(latlngs, {
                     color: color,
                     weight: key === 'hq_gls' ? 4 : (key === 'qpso' ? 3.5 : 2.5),
                     opacity: key === 'hq_gls' ? 0.95 : 0.85,
                     dashArray: key === 'ga' ? '8 6' : (key === 'exact' ? '4 4' : null)
                 }).addTo(map);
+
+                // Rich Hover & Click Inspector
+                const popupContent = `
+                    <div style="font-size:12px; line-height:1.5;">
+                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${color};"></span>
+                            <b style="color:${color}; font-size:13px;">Vehicle #${vIdx + 1} (${ALGO_NAMES[key] || key})</b>
+                        </div>
+                        <div>Origin: <b>${depotLabel}</b></div>
+                        <div>Stops: <b>${metric ? metric.stops : latlngs.length - 2} customers</b></div>
+                        <div>Load: <b>${metric ? metric.load : '?'} / ${data.config.capacity} units</b> (${metric ? metric.utilization_pct : '?'}%)</div>
+                        <div>Distance: <b>${metric ? metric.distance_km : '?'} km</b> | Est: <b>${metric ? metric.time_min : '?'} min</b></div>
+                    </div>
+                `;
+                polyline.bindPopup(popupContent);
+
+                polyline.on('mouseover', function() {
+                    this.setStyle({ weight: 6, opacity: 1.0 });
+                    // Dim other route layers
+                    Object.values(routeLayers).forEach(layerArr => {
+                        layerArr.forEach(l => {
+                            if (l !== polyline) l.setStyle({ opacity: 0.15 });
+                        });
+                    });
+                });
+
+                polyline.on('mouseout', function() {
+                    const activeKey = key;
+                    polyline.setStyle({
+                        weight: activeKey === 'hq_gls' ? 4 : (activeKey === 'qpso' ? 3.5 : 2.5),
+                        opacity: activeKey === 'hq_gls' ? 0.95 : 0.85
+                    });
+                    // Restore other route layers
+                    Object.keys(routeLayers).forEach(k => {
+                        routeLayers[k].forEach(l => {
+                            l.setStyle({
+                                opacity: k === 'hq_gls' ? 0.95 : 0.85,
+                                weight: k === 'hq_gls' ? 4 : (k === 'qpso' ? 3.5 : 2.5)
+                            });
+                        });
+                    });
+                });
+
                 layers.push(polyline);
             });
 
@@ -376,6 +448,27 @@ function renderResults(data) {
                 togglesEl.appendChild(btn);
             }
         });
+
+        // 4. Initialize Simulation Dock
+        const simDock = document.getElementById('simulationDock');
+        if (simDock) {
+            simDock.style.display = 'block';
+            const simLayerSelect = document.getElementById('simLayerSelect');
+            if (simLayerSelect) {
+                simLayerSelect.innerHTML = '';
+                algoKeys.forEach(k => {
+                    if (algos[k] && algos[k].route_coords && algos[k].route_coords.length > 0) {
+                        const opt = document.createElement('option');
+                        opt.value = k;
+                        opt.textContent = ALGO_NAMES[k] || k;
+                        if (k === (algos['hq_gls'] ? 'hq_gls' : algoKeys[0])) opt.selected = true;
+                        simLayerSelect.appendChild(opt);
+                    }
+                });
+            }
+            simActiveLayer = simLayerSelect ? simLayerSelect.value : (algos['hq_gls'] ? 'hq_gls' : algoKeys[0]);
+            resetFleetSimulation();
+        }
 
         // 3. Find Best Distance
         let bestDist = Infinity, bestKey = '';
@@ -497,13 +590,14 @@ function renderComparisonMatrix(data) {
 
     // 1. Update Meta Tags
     setElText('metaTagCity', config.city_key ? config.city_key.toUpperCase() : 'Custom Location');
+    setElText('metaTagDepots', config.num_depots || 1);
     setElText('metaTagCust', config.num_customers || (data.customers ? data.customers.length : '—'));
     setElText('metaTagVeh', config.num_vehicles || '—');
     setElText('metaTagCap', `${config.capacity || '—'} units`);
     setElText('metaTagTime', config.timestamp || new Date().toLocaleTimeString());
 
     setElText('compSubheading',
-        `Benchmarking ${Object.keys(algos).length} algorithms on ${config.num_customers || (data.customers ? data.customers.length : '')} customer nodes with ${config.num_vehicles || ''} vehicles.`
+        `Benchmarking ${Object.keys(algos).length} algorithms on ${config.num_customers || (data.customers ? data.customers.length : '')} customer nodes across ${config.num_depots || 1} depot(s) with ${config.num_vehicles || ''} vehicles.`
     );
 
     // 2. Identify Winners & KPIs
@@ -998,13 +1092,248 @@ function clearMap() {
     if (map) {
         customerMarkers.forEach(m => map.removeLayer(m));
         customerMarkers = [];
+        depotMarkers.forEach(m => map.removeLayer(m));
+        depotMarkers = [];
         Object.values(routeLayers).forEach(layers => layers.forEach(l => map.removeLayer(l)));
         routeLayers = {};
+        resetFleetSimulation();
     }
 }
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ============================================================
+// Interactive Fleet Delivery Simulation Engine
+// ============================================================
+let simAnimationTimer = null;
+let isSimPlaying = false;
+let simSpeedMultiplier = 1;
+let simActiveLayer = 'hq_gls';
+let simVehicleMarkers = [];
+let simDeliveredSet = new Set();
+let simCargoDelivered = 0;
+
+function resetFleetSimulation() {
+    if (simAnimationTimer) {
+        clearInterval(simAnimationTimer);
+        simAnimationTimer = null;
+    }
+    isSimPlaying = false;
+    simDeliveredSet.clear();
+    simCargoDelivered = 0;
+
+    // Remove vehicle markers from map
+    simVehicleMarkers.forEach(v => {
+        if (map && v.marker) map.removeLayer(v.marker);
+    });
+    simVehicleMarkers = [];
+
+    // Reset customer pins to unvisited
+    customerMarkers.forEach(m => {
+        const el = m.getElement();
+        if (el) {
+            const inner = el.querySelector('.customer-pin');
+            if (inner) inner.classList.remove('delivered');
+        }
+    });
+
+    // Reset button and telemetry HUD
+    const btn = document.getElementById('btnPlayPauseSim');
+    if (btn) {
+        btn.innerHTML = '▶ Play Simulation';
+        btn.classList.remove('pause');
+        btn.classList.add('play');
+    }
+    setElText('simStatusText', 'Ready');
+    setElText('simDeliveredCusts', `0 / ${latestSimulationData?.customers?.length || 0}`);
+    setElText('simDeliveredCargo', '0 units');
+    setElText('simActiveVehs', '0');
+    const bar = document.getElementById('simProgressFill');
+    if (bar) bar.style.width = '0%';
+}
+
+function changeSimLayer(layerKey) {
+    resetFleetSimulation();
+    simActiveLayer = layerKey;
+
+    // Highlight selected route layer on map
+    Object.keys(routeLayers).forEach(k => {
+        const isSelected = (k === layerKey);
+        routeLayers[k].forEach(l => {
+            if (isSelected) {
+                l.addTo(map);
+                l.setStyle({ opacity: 0.95, weight: 4 });
+            } else {
+                map.removeLayer(l);
+            }
+        });
+    });
+
+    // Update toggles in overlay
+    const toggles = document.querySelectorAll('.route-toggle');
+    toggles.forEach(t => {
+        if (t.dataset.algo === layerKey) t.classList.add('active');
+        else t.classList.remove('active');
+    });
+}
+
+function setSimSpeed(speed, btn) {
+    simSpeedMultiplier = speed;
+    document.querySelectorAll('.speed-pill').forEach(p => p.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    if (isSimPlaying) {
+        clearInterval(simAnimationTimer);
+        const interval = Math.max(30, Math.floor(100 / simSpeedMultiplier));
+        simAnimationTimer = setInterval(advanceSimulationStep, interval);
+    }
+}
+
+function toggleFleetSimulation() {
+    if (!latestSimulationData) {
+        alert('Please run an optimization simulation first.');
+        return;
+    }
+    const algoData = latestSimulationData.algorithms[simActiveLayer];
+    if (!algoData || !algoData.route_coords || algoData.route_coords.length === 0) {
+        alert('No routes available for the selected algorithm layer.');
+        return;
+    }
+
+    if (isSimPlaying) {
+        // Pause simulation
+        clearInterval(simAnimationTimer);
+        simAnimationTimer = null;
+        isSimPlaying = false;
+        const btn = document.getElementById('btnPlayPauseSim');
+        if (btn) {
+            btn.innerHTML = '▶ Resume Simulation';
+            btn.classList.remove('pause');
+            btn.classList.add('play');
+        }
+        setElText('simStatusText', 'Paused ⏸');
+    } else {
+        // Start or Resume simulation
+        if (simVehicleMarkers.length === 0) {
+            initVehicleMarkers(algoData);
+        }
+        isSimPlaying = true;
+        const btn = document.getElementById('btnPlayPauseSim');
+        if (btn) {
+            btn.innerHTML = '⏸ Pause Simulation';
+            btn.classList.remove('play');
+            btn.classList.add('pause');
+        }
+        setElText('simStatusText', 'En Route 🚛');
+
+        const interval = Math.max(30, Math.floor(100 / simSpeedMultiplier));
+        simAnimationTimer = setInterval(advanceSimulationStep, interval);
+    }
+}
+
+function initVehicleMarkers(algoData) {
+    simVehicleMarkers.forEach(v => {
+        if (map && v.marker) map.removeLayer(v.marker);
+    });
+    simVehicleMarkers = [];
+
+    const routes = algoData.route_coords;
+    const color = ALGO_COLORS[simActiveLayer] || '#00e5ff';
+
+    routes.forEach((rCoords, vIdx) => {
+        if (!rCoords || rCoords.length === 0) return;
+        const startPt = rCoords[0];
+        const icon = L.divIcon({
+            html: `<div class="sim-vehicle-icon" style="background:${color};">🚛</div>`,
+            className: '',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+        });
+        const marker = L.marker([startPt.lat, startPt.lon], { icon, zIndexOffset: 1000 }).addTo(map);
+        simVehicleMarkers.push({
+            marker: marker,
+            coords: rCoords,
+            vIdx: vIdx,
+            currIdx: 0,
+            t: 0
+        });
+    });
+
+    setElText('simActiveVehs', `${simVehicleMarkers.length} Vehicles`);
+}
+
+function advanceSimulationStep() {
+    if (!latestSimulationData || simVehicleMarkers.length === 0) return;
+
+    let allCompleted = true;
+    const customers = latestSimulationData.customers;
+
+    simVehicleMarkers.forEach(v => {
+        const coords = v.coords;
+        if (v.currIdx < coords.length - 1) {
+            allCompleted = false;
+            // Advance along segment
+            v.t += 0.07;
+            if (v.t >= 1.0) {
+                v.t = 0;
+                v.currIdx++;
+
+                // Check delivery at customer stop
+                const currentCoord = coords[v.currIdx];
+                customers.forEach((c, cIdx) => {
+                    if (!simDeliveredSet.has(cIdx)) {
+                        const dLat = Math.abs(currentCoord.lat - c.lat);
+                        const dLon = Math.abs(currentCoord.lon - c.lon);
+                        if (dLat < 0.0009 && dLon < 0.0009) {
+                            simDeliveredSet.add(cIdx);
+                            simCargoDelivered += c.demand;
+                            // Highlight customer pin with delivery glow
+                            const m = customerMarkers[cIdx];
+                            if (m) {
+                                const el = m.getElement();
+                                if (el) {
+                                    const pin = el.querySelector('.customer-pin');
+                                    if (pin) pin.classList.add('delivered');
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Smooth linear interpolation between path points
+            const p1 = coords[v.currIdx];
+            const p2 = coords[Math.min(v.currIdx + 1, coords.length - 1)];
+            const curLat = p1.lat + (p2.lat - p1.lat) * v.t;
+            const curLon = p1.lon + (p2.lon - p1.lon) * v.t;
+            v.marker.setLatLng([curLat, curLon]);
+        }
+    });
+
+    // Update real-time HUD metrics
+    const totalCusts = customers.length;
+    const deliveredCount = simDeliveredSet.size;
+    setElText('simDeliveredCusts', `${deliveredCount} / ${totalCusts}`);
+    setElText('simDeliveredCargo', `${simCargoDelivered} units`);
+
+    const pct = Math.min(100, Math.round((deliveredCount / Math.max(1, totalCusts)) * 100));
+    const bar = document.getElementById('simProgressFill');
+    if (bar) bar.style.width = `${pct}%`;
+
+    if (allCompleted) {
+        clearInterval(simAnimationTimer);
+        simAnimationTimer = null;
+        isSimPlaying = false;
+        setElText('simStatusText', 'Completed ✓');
+        const btn = document.getElementById('btnPlayPauseSim');
+        if (btn) {
+            btn.innerHTML = '🔄 Replay Simulation';
+            btn.classList.remove('pause');
+            btn.classList.add('play');
+        }
+    }
 }
 
 // ---- Initialize On Page Load ----

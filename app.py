@@ -107,6 +107,7 @@ def job_status(job_id):
 def _run_solve(job_id, data):
     """Background worker that runs all selected algorithms."""
     try:
+        num_depots = max(1, min(int(data.get("num_depots", 1)), 5))
         city_key = data.get("city_key")
         depot_lat = data.get("depot_lat")
         depot_lon = data.get("depot_lon")
@@ -134,35 +135,50 @@ def _run_solve(job_id, data):
             jobs[job_id]["progress"] = "Downloading road network from OpenStreetMap..."
             G = load_or_download_graph(lat=depot_lat, lon=depot_lon, radius_km=4.0)
 
-        # 2. Find depot node and sample customers
-        jobs[job_id]["progress"] = "Sampling customer locations..."
-        depot_node = ox.distance.nearest_nodes(G, X=depot_lon, Y=depot_lat)
-        depot_coord = (G.nodes[depot_node]["y"], G.nodes[depot_node]["x"])
-
+        # 2. Sample Depots & Customers
+        jobs[job_id]["progress"] = "Configuring depots and customer locations..."
+        primary_depot_node = ox.distance.nearest_nodes(G, X=depot_lon, Y=depot_lat)
         node_list = list(G.nodes)
-        candidate_nodes = [n for n in node_list if n != depot_node]
+        candidate_nodes = [n for n in node_list if n != primary_depot_node]
 
         random.seed(seed)
         np.random.seed(seed)
+
+        # Multi-depot selection (Farthest-First Traversal for maximum geographical dispersion)
+        depot_nodes = [primary_depot_node]
+        if num_depots > 1:
+            pool = random.sample(candidate_nodes, min(len(candidate_nodes), 300))
+            while len(depot_nodes) < num_depots and pool:
+                best_n = max(pool, key=lambda n: min(
+                    math.hypot(G.nodes[n]["y"] - G.nodes[d]["y"], G.nodes[n]["x"] - G.nodes[d]["x"])
+                    for d in depot_nodes
+                ))
+                depot_nodes.append(best_n)
+                pool.remove(best_n)
+                candidate_nodes.remove(best_n)
+
+        depots_coords = [(float(G.nodes[n]["y"]), float(G.nodes[n]["x"])) for n in depot_nodes]
+        num_depots = len(depot_nodes)
 
         if num_customers > len(candidate_nodes):
             num_customers = min(len(candidate_nodes), num_customers)
 
         cust_nodes = random.sample(candidate_nodes, num_customers)
         demands = [random.randint(1, 3) for _ in range(num_customers)]
-        cust_coords = [(G.nodes[c]["y"], G.nodes[c]["x"]) for c in cust_nodes]
+        cust_coords = [(float(G.nodes[c]["y"]), float(G.nodes[c]["x"])) for c in cust_nodes]
 
-        # 3. Build Dijkstra Matrices
-        jobs[job_id]["progress"] = "Computing shortest path matrices (Dijkstra)..."
-        sample_nodes = [depot_node] + cust_nodes
-        d_time, d_len = build_dijkstra_matrices(G, sample_nodes)
-
-        # Prepare response data
+        # Prepare response base metadata
+        depots_info = [
+            {"id": d, "lat": depots_coords[d][0], "lon": depots_coords[d][1], "name": f"Depot {d+1}" + (" (Main)" if d == 0 else "")}
+            for d in range(num_depots)
+        ]
         response = {
-            "depot": {"lat": depot_coord[0], "lon": depot_coord[1]},
+            "depot": depots_info[0],
+            "depots": depots_info,
             "customers": [{"lat": c[0], "lon": c[1], "demand": int(demands[i])} for i, c in enumerate(cust_coords)],
             "config": {
                 "city_key": city_key,
+                "num_depots": num_depots,
                 "num_vehicles": num_vehicles,
                 "num_customers": num_customers,
                 "capacity": capacity,
@@ -171,53 +187,148 @@ def _run_solve(job_id, data):
             "algorithms": {}
         }
 
-        # 4. Run Algorithms
-        # Quantum HQ-GLS (SOTA Flagship Solver)
+        # 3. Customer-to-Depot Clustering (for MDVRP)
+        if num_depots == 1:
+            cust_clusters = {0: list(range(num_customers))}
+            vehs_per_depot = {0: num_vehicles}
+        else:
+            cust_clusters = {d: [] for d in range(num_depots)}
+            for i, c in enumerate(cust_coords):
+                nearest_d = min(range(num_depots), key=lambda d: math.hypot(c[0] - depots_coords[d][0], c[1] - depots_coords[d][1]))
+                cust_clusters[nearest_d].append(i)
+
+            # Distribute vehicles proportionally to customer count, at least 1 per active depot
+            base_vehs = num_vehicles // num_depots
+            vehs_per_depot = {d: base_vehs for d in range(num_depots)}
+            rem_vehs = num_vehicles % num_depots
+            sorted_depots = sorted(range(num_depots), key=lambda d: len(cust_clusters[d]), reverse=True)
+            for d in sorted_depots[:rem_vehs]:
+                vehs_per_depot[d] += 1
+            for d in range(num_depots):
+                if vehs_per_depot[d] < 1:
+                    vehs_per_depot[d] = 1
+
+        # 4. Precompute Dijkstra matrices for each depot cluster
+        jobs[job_id]["progress"] = "Computing Dijkstra shortest path matrices..."
+        depot_matrices = {}
+        for d in range(num_depots):
+            c_indices = cust_clusters[d]
+            if not c_indices:
+                continue
+            sub_nodes = [depot_nodes[d]] + [cust_nodes[i] for i in c_indices]
+            d_time_d, d_len_d = build_dijkstra_matrices(G, sub_nodes)
+            depot_matrices[d] = (d_time_d, d_len_d, c_indices)
+
+        # Helper to execute any solver on the partitioned clusters
+        def _solve_algorithm(algo_name):
+            total_dist_m = 0.0
+            total_time_s = 0.0
+            total_runtime = 0.0
+            combined_routes = []
+            combined_depot_ids = []
+            combined_route_metrics = []
+            total_violations = 0
+            conv_hist = []
+
+            for d in range(num_depots):
+                if d not in depot_matrices:
+                    continue
+                d_time_d, d_len_d, c_indices = depot_matrices[d]
+                sub_demands = [demands[i] for i in c_indices]
+                sub_cust_coords = [cust_coords[i] for i in c_indices]
+                v_d = vehs_per_depot[d]
+
+                if algo_name == "hq_gls":
+                    solver = HQGLSSolver(d_time_d, d_len_d, sub_demands, v_d, capacity,
+                                         depots_coords[d], sub_cust_coords, time_limit=max(1.5, 3.0 / num_depots))
+                elif algo_name == "qpso":
+                    solver = DeltaWellQPSO(d_time_d, d_len_d, sub_demands, v_d, capacity,
+                                          depots_coords[d], sub_cust_coords, pop_size=35, max_iter=45)
+                elif algo_name == "ga":
+                    solver = ClassicalGABaseline(d_time_d, d_len_d, sub_demands, v_d, capacity,
+                                                depots_coords[d], sub_cust_coords, pop_size=30, generations=45)
+                elif algo_name == "exact":
+                    solver = ExactSolver(d_time_d, d_len_d, sub_demands, v_d, capacity,
+                                         time_limit=max(3, int(15 / num_depots)))
+                else:
+                    continue
+
+                res = solver.solve()
+                total_runtime += res.get("runtime_sec", 0.0)
+                total_violations += res.get("violations", 0)
+                if not conv_hist and res.get("convergence"):
+                    conv_hist = res["convergence"]
+
+                # Remap local customer indices back to global customer indices
+                for local_r in res.get("routes", []):
+                    if local_r:
+                        global_r = [c_indices[c] for c in local_r]
+                        combined_routes.append(global_r)
+                        combined_depot_ids.append(d)
+
+                        # Per-route metric
+                        r_nodes = [0] + [c + 1 for c in local_r] + [0]
+                        r_d = float(sum(d_len_d[r_nodes[k], r_nodes[k+1]] for k in range(len(r_nodes)-1)))
+                        r_t = float(sum(d_time_d[r_nodes[k], r_nodes[k+1]] for k in range(len(r_nodes)-1)))
+                        total_dist_m += r_d
+                        total_time_s += r_t
+                        r_load = sum(sub_demands[c] for c in local_r)
+                        combined_route_metrics.append({
+                            "vehicle_id": len(combined_routes),
+                            "depot_id": d + 1,
+                            "depot_name": f"Depot {d + 1}",
+                            "stops": len(global_r),
+                            "load": r_load,
+                            "capacity": capacity,
+                            "utilization_pct": round((r_load / capacity) * 100.0, 1) if capacity > 0 else 0.0,
+                            "distance_km": round(r_d / 1000.0, 2),
+                            "time_min": round(r_t / 60.0, 1),
+                            "sequence": [int(c + 1) for c in global_r]
+                        })
+
+            route_coords = _routes_to_coords_multi(combined_routes, combined_depot_ids, depots_coords, cust_coords)
+
+            return {
+                "algorithm": {
+                    "hq_gls": "Quantum HQ-GLS (SOTA)",
+                    "qpso": "Delta-Well QPSO",
+                    "ga": "Classical GA Baseline",
+                    "exact": "Exact Solver (OR-Tools)"
+                }.get(algo_name, algo_name),
+                "distance_km": round(total_dist_m / 1000.0, 2),
+                "time_sec": round(total_time_s, 2),
+                "runtime_sec": round(total_runtime, 3),
+                "routes": combined_routes,
+                "depot_ids": combined_depot_ids,
+                "violations": int(total_violations),
+                "convergence": conv_hist,
+                "route_coords": route_coords,
+                "route_metrics": combined_route_metrics
+            }
+
+        # 5. Run Selected Algorithms
         if "hq_gls" in algorithms:
-            jobs[job_id]["progress"] = "Running Quantum HQ-GLS (Quantum Tunneling + Cross-Exchange)..."
-            hqgls = HQGLSSolver(d_time, d_len, demands, num_vehicles, capacity,
-                                depot_coord, cust_coords, time_limit=3.0)
-            result = hqgls.solve()
-            result["route_coords"] = _routes_to_coords(result["routes"], depot_coord, cust_coords)
-            result["route_metrics"] = _compute_route_metrics(result["routes"], demands, d_len, d_time, capacity)
-            response["algorithms"]["hq_gls"] = result
+            jobs[job_id]["progress"] = "Running Quantum HQ-GLS (Quantum Tunneling + ALNS)..."
+            response["algorithms"]["hq_gls"] = _solve_algorithm("hq_gls")
 
-        # Delta-Well QPSO
         if "qpso" in algorithms:
-            jobs[job_id]["progress"] = "Running Delta-Well QPSO optimization..."
-            qpso = DeltaWellQPSO(d_time, d_len, demands, num_vehicles, capacity,
-                                 depot_coord, cust_coords, pop_size=35, max_iter=50)
-            result = qpso.solve()
-            result["route_coords"] = _routes_to_coords(result["routes"], depot_coord, cust_coords)
-            result["route_metrics"] = _compute_route_metrics(result["routes"], demands, d_len, d_time, capacity)
-            response["algorithms"]["qpso"] = result
+            jobs[job_id]["progress"] = "Running Delta-Well QPSO..."
+            response["algorithms"]["qpso"] = _solve_algorithm("qpso")
 
-        # Classical GA
         if "ga" in algorithms:
-            jobs[job_id]["progress"] = "Running Classical Heuristic GA..."
-            ga = ClassicalGABaseline(d_time, d_len, demands, num_vehicles, capacity,
-                                     depot_coord, cust_coords, pop_size=30, generations=50)
-            result = ga.solve()
-            result["route_coords"] = _routes_to_coords(result["routes"], depot_coord, cust_coords)
-            result["route_metrics"] = _compute_route_metrics(result["routes"], demands, d_len, d_time, capacity)
-            response["algorithms"]["ga"] = result
+            jobs[job_id]["progress"] = "Running Classical GA..."
+            response["algorithms"]["ga"] = _solve_algorithm("ga")
 
-        # Exact Solver (limited to 100 customers)
         if "exact" in algorithms:
             if num_customers <= exact_cust_limit:
                 jobs[job_id]["progress"] = "Running Exact Solver (OR-Tools)..."
-                exact = ExactSolver(d_time, d_len, demands, num_vehicles, capacity, time_limit=15)
-                result = exact.solve()
-                result["route_coords"] = _routes_to_coords(result["routes"], depot_coord, cust_coords)
-                result["route_metrics"] = _compute_route_metrics(result["routes"], demands, d_len, d_time, capacity)
-                response["algorithms"]["exact"] = result
+                response["algorithms"]["exact"] = _solve_algorithm("exact")
             else:
                 response["algorithms"]["exact"] = {
                     "algorithm": "Exact Solver (OR-Tools)",
                     "distance_km": -1, "time_sec": -1, "runtime_sec": 0,
                     "routes": [], "violations": 0, "convergence": [],
-                    "route_coords": [],
-                    "route_metrics": [],
+                    "route_coords": [], "route_metrics": [],
                     "error": f"Skipped: Exact solver capped at {exact_cust_limit} customers for web responsiveness (requested {num_customers})"
                 }
 
@@ -233,8 +344,23 @@ def _run_solve(job_id, data):
         }
 
 
+def _routes_to_coords_multi(routes, depot_ids, depots_coords, cust_coords):
+    """Convert route indices to lat/lng coordinate arrays, anchoring each route to its origin depot."""
+    route_coords = []
+    for r, d_idx in zip(routes, depot_ids):
+        if not r:
+            continue
+        d_coord = depots_coords[d_idx]
+        coords = [{"lat": d_coord[0], "lon": d_coord[1]}]
+        for c_idx in r:
+            coords.append({"lat": cust_coords[c_idx][0], "lon": cust_coords[c_idx][1]})
+        coords.append({"lat": d_coord[0], "lon": d_coord[1]})
+        route_coords.append(coords)
+    return route_coords
+
+
 def _routes_to_coords(routes, depot_coord, cust_coords):
-    """Convert route indices to lat/lng coordinate arrays for map rendering."""
+    """Legacy single-depot route coordinates helper."""
     route_coords = []
     for route in routes:
         if not route:

@@ -46,6 +46,10 @@
             <div class="config-section">
                 <h3>🚛 Fleet Configuration</h3>
                 <div class="slider-group">
+                    <label>Depots <span id="depotVal">1</span></label>
+                    <input type="range" id="numDepots" min="1" max="5" value="1">
+                </div>
+                <div class="slider-group">
                     <label>Vehicles <span id="vehVal">6</span></label>
                     <input type="range" id="numVehicles" min="2" max="20" value="6">
                 </div>
@@ -147,6 +151,60 @@
                 <div class="map-container">
                     <div id="map"></div>
 
+                    <!-- Interactive Fleet Delivery Simulation Dock -->
+                    <div class="simulation-dock" id="simulationDock" style="display:none;">
+                        <div class="sim-header">
+                            <div class="sim-title">
+                                <span class="sim-pulse-dot"></span>
+                                <span>Fleet Delivery Simulation</span>
+                            </div>
+                            <div class="sim-layer-select">
+                                <label for="simLayerSelect">Active Fleet Layer:</label>
+                                <select id="simLayerSelect" onchange="changeSimLayer(this.value)">
+                                    <option value="hq_gls">Quantum HQ-GLS</option>
+                                    <option value="qpso">Delta-Well QPSO</option>
+                                    <option value="ga">Classical GA</option>
+                                    <option value="exact">Exact (OR-Tools)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="sim-controls-row">
+                            <button id="btnPlayPauseSim" class="sim-btn play" onclick="toggleFleetSimulation()">
+                                ▶ Play Simulation
+                            </button>
+                            <button id="btnResetSim" class="sim-btn reset" onclick="resetFleetSimulation()">
+                                ⏹ Reset
+                            </button>
+                            <div class="sim-speed-pills">
+                                <button class="speed-pill active" id="speed1x" onclick="setSimSpeed(1, this)">1x</button>
+                                <button class="speed-pill" id="speed2x" onclick="setSimSpeed(2, this)">2x</button>
+                                <button class="speed-pill" id="speed5x" onclick="setSimSpeed(5, this)">5x</button>
+                            </div>
+                        </div>
+                        <div class="sim-telemetry-grid">
+                            <div class="telemetry-cell">
+                                <div class="cell-label">Customers Delivered</div>
+                                <div class="cell-val" id="simDeliveredCusts">0 / 0</div>
+                            </div>
+                            <div class="telemetry-cell">
+                                <div class="cell-label">Cargo Delivered</div>
+                                <div class="cell-val" id="simDeliveredCargo">0 units</div>
+                            </div>
+                            <div class="telemetry-cell">
+                                <div class="cell-label">Active Vehicles</div>
+                                <div class="cell-val" id="simActiveVehs">0</div>
+                            </div>
+                            <div class="telemetry-cell">
+                                <div class="cell-label">Sim Status</div>
+                                <div class="cell-val status-badge" id="simStatusText">Ready</div>
+                            </div>
+                        </div>
+                        <!-- Progress bar -->
+                        <div class="sim-progress-bar-bg">
+                            <div class="sim-progress-bar-fill" id="simProgressFill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
                     <!-- Quick Results Overlay on Map -->
                     <div class="results-overlay" id="resultsOverlay">
                         <!-- Top Action Banner -->
@@ -191,6 +249,7 @@
                             <p id="compSubheading">Configure fleet parameters and run simulation to populate real-time benchmark metrics.</p>
                             <div class="comp-meta-tags" id="compMetaTags">
                                 <span class="meta-tag">City: <b id="metaTagCity">Delhi</b></span>
+                                <span class="meta-tag">Depots: <b id="metaTagDepots">1</b></span>
                                 <span class="meta-tag">Customers: <b id="metaTagCust">50</b></span>
                                 <span class="meta-tag">Vehicles: <b id="metaTagVeh">6</b></span>
                                 <span class="meta-tag">Capacity: <b id="metaTagCap">40</b></span>
