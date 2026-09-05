@@ -4,15 +4,15 @@
    ============================================================ */
 
 // ---- Global State ----
-let map;
+let map = null;
 let depotMarker = null;
 let customerMarkers = [];
 let routeLayers = {};
-let selectedCity = null;
+let selectedCity = 'delhi';
 let convergenceChart = null;
 let bigConvergenceChart = null;
 let latestSimulationData = null;
-let activeManifestAlgo = 'qpso';
+let activeManifestAlgo = 'exact';
 
 const ALGO_COLORS = {
     qpso:  '#10b981', // Emerald
@@ -26,16 +26,24 @@ const ALGO_NAMES = {
     exact: 'Exact Solver (OR-Tools)'
 };
 
-const ALGO_BADGES = {
-    qpso:  'Quantum-Inspired',
-    ga:    'Genetic Heuristic',
-    exact: 'Exact Solver'
-};
+// Safe DOM text setter helper
+function setElText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+}
+
+function setElHtml(id, html) {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+}
 
 function selectAllAlgos() {
-    document.getElementById('algoQPSO').checked = true;
-    document.getElementById('algoGA').checked = true;
-    document.getElementById('algoExact').checked = true;
+    const q = document.getElementById('algoQPSO');
+    const g = document.getElementById('algoGA');
+    const e = document.getElementById('algoExact');
+    if (q) q.checked = true;
+    if (g) g.checked = true;
+    if (e) e.checked = true;
 }
 
 // ---- View Mode Switching ----
@@ -46,26 +54,23 @@ function switchView(viewName) {
     const viewComp = document.getElementById('viewComparison');
 
     if (viewName === 'map') {
-        tabMap.classList.add('active');
-        tabComp.classList.remove('active');
-        viewMap.classList.add('active');
-        viewComp.classList.remove('active');
+        if (tabMap) tabMap.classList.add('active');
+        if (tabComp) tabComp.classList.remove('active');
+        if (viewMap) viewMap.classList.add('active');
+        if (viewComp) viewComp.classList.remove('active');
 
-        // Leaflet needs resize event when unhidden
         setTimeout(() => {
             if (map) map.invalidateSize();
         }, 150);
     } else {
-        tabComp.classList.add('active');
-        tabMap.classList.remove('active');
-        viewComp.classList.add('active');
-        viewMap.classList.remove('active');
+        if (tabComp) tabComp.classList.add('active');
+        if (tabMap) tabMap.classList.remove('active');
+        if (viewComp) viewComp.classList.add('active');
+        if (viewMap) viewMap.classList.remove('active');
 
-        // Render or refresh big comparison charts
+        // Always refresh comparison matrix and charts when switching to comparison tab
         if (latestSimulationData) {
-            renderBigConvergenceChart(latestSimulationData.algorithms);
-            renderFleetDistribution(latestSimulationData);
-            showManifest(activeManifestAlgo);
+            renderComparisonMatrix(latestSimulationData);
         }
     }
 }
@@ -77,7 +82,7 @@ function initMap() {
         attributionControl: true
     }).setView([28.6139, 77.2090], 11); // Delhi default
 
-    // High quality dark tile without watermark
+    // Clean Fastly CDN dark tiles without watermark
     L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://carto.com/">CARTO</a> | &copy; OpenStreetMap contributors',
         maxZoom: 18,
@@ -91,7 +96,8 @@ function initMap() {
     map.on('click', function(e) {
         placeDepot(e.latlng.lat, e.latlng.lng);
         selectedCity = null;
-        document.getElementById('citySelect').value = '';
+        const sel = document.getElementById('citySelect');
+        if (sel) sel.value = '';
     });
 }
 
@@ -101,6 +107,8 @@ async function loadCities() {
         const resp = await fetch('/api/cities');
         const cities = await resp.json();
         const sel = document.getElementById('citySelect');
+        if (!sel) return;
+
         sel.innerHTML = '<option value="">— Select City or Click Map —</option>';
         cities.forEach(c => {
             const opt = document.createElement('option');
@@ -114,7 +122,7 @@ async function loadCities() {
 
         sel.addEventListener('change', function() {
             const opt = this.options[this.selectedIndex];
-            if (opt.value) {
+            if (opt && opt.value) {
                 selectedCity = opt.value;
                 const lat = parseFloat(opt.dataset.lat);
                 const lon = parseFloat(opt.dataset.lon);
@@ -133,10 +141,12 @@ async function loadCities() {
 
 // ---- Depot Placement ----
 function placeDepot(lat, lon) {
-    document.getElementById('depotLat').value = lat.toFixed(4);
-    document.getElementById('depotLon').value = lon.toFixed(4);
+    const latEl = document.getElementById('depotLat');
+    const lonEl = document.getElementById('depotLon');
+    if (latEl) latEl.value = lat.toFixed(4);
+    if (lonEl) lonEl.value = lon.toFixed(4);
 
-    if (depotMarker) map.removeLayer(depotMarker);
+    if (depotMarker && map) map.removeLayer(depotMarker);
 
     const icon = L.divIcon({
         html: `<div style="
@@ -152,17 +162,20 @@ function placeDepot(lat, lon) {
         iconAnchor: [15, 15]
     });
 
-    depotMarker = L.marker([lat, lon], { icon, draggable: true })
-        .addTo(map)
-        .bindPopup('<b>Depot (Distribution Hub)</b><br>Drag marker or click anywhere to reposition');
+    if (map) {
+        depotMarker = L.marker([lat, lon], { icon, draggable: true })
+            .addTo(map)
+            .bindPopup('<b>Depot (Distribution Hub)</b><br>Drag marker or click anywhere to reposition');
 
-    depotMarker.on('dragend', function(e) {
-        const pos = e.target.getLatLng();
-        document.getElementById('depotLat').value = pos.lat.toFixed(4);
-        document.getElementById('depotLon').value = pos.lng.toFixed(4);
-        selectedCity = null;
-        document.getElementById('citySelect').value = '';
-    });
+        depotMarker.on('dragend', function(e) {
+            const pos = e.target.getLatLng();
+            if (latEl) latEl.value = pos.lat.toFixed(4);
+            if (lonEl) lonEl.value = pos.lng.toFixed(4);
+            selectedCity = null;
+            const sel = document.getElementById('citySelect');
+            if (sel) sel.value = '';
+        });
+    }
 }
 
 // ---- Slider Setup ----
@@ -174,9 +187,12 @@ function initSliders() {
     ];
     sliders.forEach(s => {
         const el = document.getElementById(s.id);
-        el.addEventListener('input', () => {
-            document.getElementById(s.display).textContent = el.value;
-        });
+        const disp = document.getElementById(s.display);
+        if (el && disp) {
+            el.addEventListener('input', () => {
+                disp.textContent = el.value;
+            });
+        }
     });
 }
 
@@ -197,9 +213,13 @@ async function runSimulation() {
     }
 
     const algorithms = [];
-    if (document.getElementById('algoQPSO').checked) algorithms.push('qpso');
-    if (document.getElementById('algoGA').checked) algorithms.push('ga');
-    if (document.getElementById('algoExact').checked) algorithms.push('exact');
+    const qCheck = document.getElementById('algoQPSO');
+    const gCheck = document.getElementById('algoGA');
+    const eCheck = document.getElementById('algoExact');
+
+    if (qCheck && qCheck.checked) algorithms.push('qpso');
+    if (gCheck && gCheck.checked) algorithms.push('ga');
+    if (eCheck && eCheck.checked) algorithms.push('exact');
 
     if (algorithms.length === 0) {
         alert('Please select at least one algorithm to run simulation.');
@@ -217,14 +237,18 @@ async function runSimulation() {
     };
 
     // UI Loading State
-    btn.disabled = true;
-    btn.textContent = '⏳ Optimizing Routes...';
-    btn.classList.add('running');
-    progress.classList.add('active');
-    progressText.textContent = 'Submitting job...';
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Optimizing Routes...';
+        btn.classList.add('running');
+    }
+    if (progress) progress.classList.add('active');
+    if (progressText) progressText.textContent = 'Submitting job to solver engine...';
     if (statusText) statusText.textContent = 'Optimization in Progress...';
     if (statusDot) statusDot.classList.add('running');
-    document.getElementById('resultsOverlay').classList.remove('active');
+
+    const overlay = document.getElementById('resultsOverlay');
+    if (overlay) overlay.classList.remove('active');
     clearMap();
 
     try {
@@ -241,7 +265,7 @@ async function runSimulation() {
             await sleep(700);
             const statusResp = await fetch(`/api/status/${job_id}`);
             const status = await statusResp.json();
-            progressText.textContent = status.progress || 'Optimizing...';
+            if (progressText) progressText.textContent = status.progress || 'Optimizing...';
 
             if (status.status === 'done') {
                 result = status.results;
@@ -250,7 +274,7 @@ async function runSimulation() {
             }
         }
 
-        // Render full suite
+        // Render full suite (map + comparison)
         renderResults(result);
 
         if (statusText) statusText.textContent = 'Simulation Complete & Benchmarked';
@@ -258,430 +282,453 @@ async function runSimulation() {
 
     } catch (e) {
         alert('Simulation failed: ' + e.message);
-        console.error(e);
+        console.error('Simulation error:', e);
         if (statusText) statusText.textContent = 'Simulation Error';
         if (statusDot) statusDot.classList.remove('running');
     } finally {
-        btn.disabled = false;
-        btn.textContent = '▶ Run Simulation';
-        btn.classList.remove('running');
-        progress.classList.remove('active');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '▶ Run Simulation';
+            btn.classList.remove('running');
+        }
+        if (progress) progress.classList.remove('active');
     }
 }
 
-// ---- Render Results (Map + Comparison) ----
+// ---- Render Results (Map + Trigger Comparison Matrix) ----
 function renderResults(data) {
+    if (!data) return;
     latestSimulationData = data;
 
-    // 1. Plot customers on map
-    data.customers.forEach((c, i) => {
-        const icon = L.divIcon({
-            html: `<div style="
-                width:11px; height:11px; border-radius:50%;
-                background:#38bdf8; border:2px solid #0f172a;
-                box-shadow: 0 0 6px rgba(56,189,248,0.7);
-            "></div>`,
-            className: '',
-            iconSize: [11, 11],
-            iconAnchor: [5.5, 5.5]
-        });
-        const m = L.marker([c.lat, c.lon], { icon })
-            .addTo(map)
-            .bindPopup(`<b>Customer Node #${i+1}</b><br>Package Demand: <b>${c.demand} units</b>`);
-        customerMarkers.push(m);
-    });
-
-    // Fit map bounds
-    const allPts = [[data.depot.lat, data.depot.lon], ...data.customers.map(c => [c.lat, c.lon])];
-    map.fitBounds(allPts, { padding: [50, 50] });
-
-    // 2. Draw routes for each algorithm
-    const algoKeys = Object.keys(data.algorithms);
-    const togglesEl = document.getElementById('routeToggles');
-    togglesEl.innerHTML = '';
-
-    algoKeys.forEach(key => {
-        const algo = data.algorithms[key];
-        if (!algo.route_coords || algo.route_coords.length === 0) return;
-
-        const color = ALGO_COLORS[key] || '#888';
-        const layers = [];
-
-        algo.route_coords.forEach((routeCoords) => {
-            const latlngs = routeCoords.map(p => [p.lat, p.lon]);
-            const polyline = L.polyline(latlngs, {
-                color: color,
-                weight: key === 'qpso' ? 3.5 : 2.5,
-                opacity: 0.85,
-                dashArray: key === 'ga' ? '8 6' : (key === 'exact' ? '4 4' : null)
-            }).addTo(map);
-            layers.push(polyline);
-        });
-
-        routeLayers[key] = layers;
-
-        // Toggle button on Map Overlay
-        const btn = document.createElement('button');
-        btn.className = 'route-toggle active';
-        btn.innerHTML = `<span style="color:${color}; font-size:14px;">●</span> ${ALGO_NAMES[key] || key}`;
-        btn.dataset.algo = key;
-        btn.onclick = function() {
-            this.classList.toggle('active');
-            const visible = this.classList.contains('active');
-            routeLayers[key].forEach(l => {
-                if (visible) l.addTo(map);
-                else map.removeLayer(l);
+    try {
+        // 1. Plot customers on map
+        if (data.customers && map) {
+            data.customers.forEach((c, i) => {
+                const icon = L.divIcon({
+                    html: `<div style="
+                        width:11px; height:11px; border-radius:50%;
+                        background:#38bdf8; border:2px solid #0f172a;
+                        box-shadow: 0 0 6px rgba(56,189,248,0.7);
+                    "></div>`,
+                    className: '',
+                    iconSize: [11, 11],
+                    iconAnchor: [5.5, 5.5]
+                });
+                const m = L.marker([c.lat, c.lon], { icon })
+                    .addTo(map)
+                    .bindPopup(`<b>Customer Node #${i+1}</b><br>Package Demand: <b>${c.demand} units</b>`);
+                customerMarkers.push(m);
             });
-        };
-        togglesEl.appendChild(btn);
-    });
 
-    // 3. Find Best Distance & Fastest
-    let bestDist = Infinity, bestKey = '';
-    algoKeys.forEach(key => {
-        const d = data.algorithms[key].distance_km;
-        if (d > 0 && d < bestDist) { bestDist = d; bestKey = key; }
-    });
+            // Fit map bounds
+            if (data.depot) {
+                const allPts = [[data.depot.lat, data.depot.lon], ...data.customers.map(c => [c.lat, c.lon])];
+                map.fitBounds(allPts, { padding: [50, 50] });
+            }
+        }
 
-    const winnerBadgeEl = document.getElementById('winnerBadge');
-    if (winnerBadgeEl) {
-        winnerBadgeEl.textContent = bestKey ? `Winner: ${ALGO_NAMES[bestKey] ? ALGO_NAMES[bestKey].split(' ')[0] : bestKey}` : '—';
+        // 2. Draw routes for each algorithm
+        const algos = data.algorithms || {};
+        const algoKeys = Object.keys(algos);
+        const togglesEl = document.getElementById('routeToggles');
+        if (togglesEl) togglesEl.innerHTML = '';
+
+        algoKeys.forEach(key => {
+            const algo = algos[key];
+            if (!algo || !algo.route_coords || algo.route_coords.length === 0) return;
+
+            const color = ALGO_COLORS[key] || '#888';
+            const layers = [];
+
+            algo.route_coords.forEach((routeCoords) => {
+                const latlngs = routeCoords.map(p => [p.lat, p.lon]);
+                const polyline = L.polyline(latlngs, {
+                    color: color,
+                    weight: key === 'qpso' ? 3.5 : 2.5,
+                    opacity: 0.85,
+                    dashArray: key === 'ga' ? '8 6' : (key === 'exact' ? '4 4' : null)
+                }).addTo(map);
+                layers.push(polyline);
+            });
+
+            routeLayers[key] = layers;
+
+            // Toggle button on Map Overlay
+            if (togglesEl) {
+                const btn = document.createElement('button');
+                btn.className = 'route-toggle active';
+                btn.innerHTML = `<span style="color:${color}; font-size:14px;">●</span> ${ALGO_NAMES[key] || key}`;
+                btn.dataset.algo = key;
+                btn.onclick = function() {
+                    this.classList.toggle('active');
+                    const visible = this.classList.contains('active');
+                    routeLayers[key].forEach(l => {
+                        if (visible) l.addTo(map);
+                        else map.removeLayer(l);
+                    });
+                };
+                togglesEl.appendChild(btn);
+            }
+        });
+
+        // 3. Find Best Distance
+        let bestDist = Infinity, bestKey = '';
+        algoKeys.forEach(key => {
+            const d = algos[key].distance_km;
+            if (d > 0 && d < bestDist) { bestDist = d; bestKey = key; }
+        });
+
+        const winnerBadgeEl = document.getElementById('winnerBadge');
+        if (winnerBadgeEl) {
+            winnerBadgeEl.textContent = bestKey ? `WINNER: ${bestKey.toUpperCase()}` : '—';
+        }
+
+        // 4. Build HUD Overlay Algorithm Cards
+        const cardsEl = document.getElementById('algoCards');
+        if (cardsEl) {
+            cardsEl.innerHTML = '';
+            algoKeys.forEach(key => {
+                const algo = algos[key];
+                if (!algo || (algo.distance_km <= 0 && !algo.error)) return;
+
+                const color = ALGO_COLORS[key] || '#888';
+                const isWinner = (key === bestKey);
+                const card = document.createElement('div');
+                card.className = 'results-card';
+
+                if (algo.error) {
+                    card.innerHTML = `
+                        <h3>
+                            <span class="dot" style="background:${color}"></span>
+                            ${algo.algorithm || ALGO_NAMES[key]}
+                        </h3>
+                        <div style="font-size:12px; color:#f87171; padding:8px 0;">
+                            ⚠️ ${algo.error}
+                        </div>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <h3>
+                            <span class="dot" style="background:${color}"></span>
+                            ${algo.algorithm || ALGO_NAMES[key]}
+                            ${isWinner ? '<span class="winner-badge">★ CHAMPION</span>' : ''}
+                        </h3>
+                        <div class="metric-grid">
+                            <div class="metric-item">
+                                <div class="metric-value" style="color:${color}">${algo.distance_km}</div>
+                                <div class="metric-label">Distance (km)</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value" style="color:${color}">${(algo.time_sec / 3600).toFixed(2)}h</div>
+                                <div class="metric-label">Travel Time</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value" style="color:${color}">${algo.runtime_sec.toFixed(2)}s</div>
+                                <div class="metric-label">Runtime</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value" style="color:${algo.violations > 0 ? '#ef4444' : color}">${algo.violations}</div>
+                                <div class="metric-label">Violations</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                cardsEl.appendChild(card);
+            });
+        }
+
+        // 5. Comparison Bars in Map Overlay
+        const barsEl = document.getElementById('comparisonBars');
+        if (barsEl) {
+            barsEl.innerHTML = '';
+            const validDists = algoKeys.map(k => algos[k].distance_km).filter(d => d > 0);
+            const maxDist = validDists.length > 0 ? Math.max(...validDists) : 1;
+
+            algoKeys.forEach(key => {
+                const algo = algos[key];
+                if (!algo || algo.distance_km <= 0) return;
+                const pct = Math.max(12, (algo.distance_km / maxDist) * 100);
+                const color = ALGO_COLORS[key];
+                const row = document.createElement('div');
+                row.className = 'comparison-bar';
+                row.innerHTML = `
+                    <div style="width:105px; font-size:11px; font-weight:700; color:${color}">
+                        ${key.toUpperCase()}
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar-fill ${key}" style="width:${pct}%; background:${color};"></div>
+                    </div>
+                    <div class="bar-label">${algo.distance_km} km</div>
+                `;
+                barsEl.appendChild(row);
+            });
+        }
+
+        // 6. Quick Convergence Chart in Overlay
+        renderConvergenceChart(algos);
+
+        // Show Map HUD overlay
+        const overlay = document.getElementById('resultsOverlay');
+        if (overlay) overlay.classList.add('active');
+
+    } catch (err) {
+        console.error('Error in map renderResults:', err);
     }
 
-    // 4. Build HUD Overlay Algorithm Cards
-    const cardsEl = document.getElementById('algoCards');
-    cardsEl.innerHTML = '';
-
-    algoKeys.forEach(key => {
-        const algo = data.algorithms[key];
-        if (algo.distance_km <= 0 && !algo.error) return;
-
-        const color = ALGO_COLORS[key] || '#888';
-        const isWinner = (key === bestKey);
-        const card = document.createElement('div');
-        card.className = 'results-card';
-
-        if (algo.error) {
-            card.innerHTML = `
-                <h3>
-                    <span class="dot" style="background:${color}"></span>
-                    ${algo.algorithm}
-                </h3>
-                <div style="font-size:12px; color:#f87171; padding:8px 0;">
-                    ⚠️ ${algo.error}
-                </div>
-            `;
-        } else {
-            card.innerHTML = `
-                <h3>
-                    <span class="dot" style="background:${color}"></span>
-                    ${algo.algorithm}
-                    ${isWinner ? '<span class="winner-badge">★ Champion</span>' : ''}
-                </h3>
-                <div class="metric-grid">
-                    <div class="metric-item">
-                        <div class="metric-value" style="color:${color}">${algo.distance_km}</div>
-                        <div class="metric-label">Distance (km)</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-value" style="color:${color}">${(algo.time_sec / 3600).toFixed(2)}h</div>
-                        <div class="metric-label">Travel Time</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-value" style="color:${color}">${algo.runtime_sec.toFixed(2)}s</div>
-                        <div class="metric-label">Runtime</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-value" style="color:${algo.violations > 0 ? '#ef4444' : color}">${algo.violations}</div>
-                        <div class="metric-label">Violations</div>
-                    </div>
-                </div>
-            `;
-        }
-        cardsEl.appendChild(card);
-    });
-
-    // 5. Comparison Bars in Map Overlay
-    const barsEl = document.getElementById('comparisonBars');
-    barsEl.innerHTML = '';
-    const validDists = algoKeys.map(k => data.algorithms[k].distance_km).filter(d => d > 0);
-    const maxDist = validDists.length > 0 ? Math.max(...validDists) : 1;
-
-    algoKeys.forEach(key => {
-        const algo = data.algorithms[key];
-        if (algo.distance_km <= 0) return;
-        const pct = Math.max(12, (algo.distance_km / maxDist) * 100);
-        const color = ALGO_COLORS[key];
-        const row = document.createElement('div');
-        row.className = 'comparison-bar';
-        row.innerHTML = `
-            <div style="width:105px; font-size:11px; font-weight:700; color:${color}">
-                ${ALGO_NAMES[key] ? ALGO_NAMES[key].replace('Classical Heuristic ', '').replace(' Solver (OR-Tools)', '') : key}
-            </div>
-            <div class="bar-track">
-                <div class="bar-fill ${key}" style="width:${pct}%; background:${color};"></div>
-            </div>
-            <div class="bar-label">${algo.distance_km} km</div>
-        `;
-        barsEl.appendChild(row);
-    });
-
-    // 6. Quick Convergence Chart in Overlay
-    renderConvergenceChart(data.algorithms);
-
-    // Show Map HUD overlay
-    document.getElementById('resultsOverlay').classList.add('active');
-
     // 7. Render Comprehensive Comparison Matrix View
-    renderComparisonMatrix(data);
+    try {
+        renderComparisonMatrix(data);
+    } catch (err) {
+        console.error('Error in renderComparisonMatrix:', err);
+    }
 }
 
 // ---- Render Dedicated Comparison Matrix View ----
 function renderComparisonMatrix(data) {
-    const algos = data.algorithms;
+    if (!data) return;
+    const algos = data.algorithms || {};
     const config = data.config || {};
 
     // 1. Update Meta Tags
-    document.getElementById('metaTagCity').textContent = config.city_key ? config.city_key.toUpperCase() : 'Custom Map';
-    document.getElementById('metaTagCust').textContent = config.num_customers || data.customers.length;
-    document.getElementById('metaTagVeh').textContent = config.num_vehicles || '—';
-    document.getElementById('metaTagCap').textContent = `${config.capacity || '—'} units`;
-    document.getElementById('metaTagTime').textContent = config.timestamp || new Date().toLocaleTimeString();
+    setElText('metaTagCity', config.city_key ? config.city_key.toUpperCase() : 'Custom Location');
+    setElText('metaTagCust', config.num_customers || (data.customers ? data.customers.length : '—'));
+    setElText('metaTagVeh', config.num_vehicles || '—');
+    setElText('metaTagCap', `${config.capacity || '—'} units`);
+    setElText('metaTagTime', config.timestamp || new Date().toLocaleTimeString());
 
-    document.getElementById('compSubheading').textContent =
-        `Benchmarking ${Object.keys(algos).length} algorithms on ${config.num_customers || data.customers.length} customer nodes with ${config.num_vehicles} vehicles.`;
+    setElText('compSubheading',
+        `Benchmarking ${Object.keys(algos).length} algorithms on ${config.num_customers || (data.customers ? data.customers.length : '')} customer nodes with ${config.num_vehicles || ''} vehicles.`
+    );
 
     // 2. Identify Winners & KPIs
     let bestDist = Infinity, bestDistAlgo = null;
     let fastestTime = Infinity, fastestAlgo = null;
-    let gaDist = algos.ga && algos.ga.distance_km > 0 ? algos.ga.distance_km : null;
+    let gaDist = (algos.ga && algos.ga.distance_km > 0) ? algos.ga.distance_km : null;
     let totalViolations = 0;
 
     ['qpso', 'ga', 'exact'].forEach(k => {
-        if (algos[k] && algos[k].distance_km > 0) {
-            if (algos[k].distance_km < bestDist) {
-                bestDist = algos[k].distance_km;
+        const a = algos[k];
+        if (a && a.distance_km > 0) {
+            if (a.distance_km < bestDist) {
+                bestDist = a.distance_km;
                 bestDistAlgo = k;
             }
-            if (algos[k].runtime_sec < fastestTime) {
-                fastestTime = algos[k].runtime_sec;
+            if (a.runtime_sec !== undefined && a.runtime_sec < fastestTime) {
+                fastestTime = a.runtime_sec;
                 fastestAlgo = k;
             }
-            totalViolations += (algos[k].violations || 0);
+            totalViolations += (a.violations || 0);
         }
     });
 
     // Hero KPI: Best Distance
     if (bestDistAlgo) {
-        document.getElementById('kpiBestAlgo').textContent = ALGO_NAMES[bestDistAlgo];
-        document.getElementById('kpiBestDist').textContent = `${bestDist.toFixed(2)} km`;
+        setElText('kpiBestAlgo', ALGO_NAMES[bestDistAlgo] || bestDistAlgo);
+        setElText('kpiBestDist', `${bestDist.toFixed(2)} km`);
         if (gaDist && bestDistAlgo !== 'ga') {
             const saving = ((gaDist - bestDist) / gaDist * 100).toFixed(1);
-            document.getElementById('kpiDistMargin').textContent = `${saving}% shorter than GA`;
+            setElText('kpiDistMargin', `${saving}% shorter than GA`);
         } else {
-            document.getElementById('kpiDistMargin').textContent = 'Shortest fleet distance';
+            setElText('kpiDistMargin', 'Shortest fleet distance');
         }
     } else {
-        document.getElementById('kpiBestAlgo').textContent = '—';
-        document.getElementById('kpiBestDist').textContent = '—';
-        document.getElementById('kpiDistMargin').textContent = '—';
+        setElText('kpiBestAlgo', '—');
+        setElText('kpiBestDist', '— km');
+        setElText('kpiDistMargin', '—');
     }
 
     // Hero KPI: Fastest
-    if (fastestAlgo) {
-        document.getElementById('kpiFastAlgo').textContent = ALGO_NAMES[fastestAlgo];
-        document.getElementById('kpiFastTime').textContent = `${fastestTime.toFixed(2)} s`;
+    if (fastestAlgo && fastestTime < Infinity) {
+        setElText('kpiFastAlgo', ALGO_NAMES[fastestAlgo] || fastestAlgo);
+        setElText('kpiFastTime', `${fastestTime.toFixed(2)} s`);
         if (algos.exact && algos.exact.runtime_sec > 0 && fastestAlgo !== 'exact') {
             const speedup = (algos.exact.runtime_sec / Math.max(0.001, fastestTime)).toFixed(1);
-            document.getElementById('kpiSpeedup').textContent = `${speedup}x faster than Exact`;
+            setElText('kpiSpeedup', `${speedup}x faster than Exact`);
         } else {
-            document.getElementById('kpiSpeedup').textContent = 'Lowest optimization latency';
+            setElText('kpiSpeedup', 'Lowest optimization runtime');
         }
     } else {
-        document.getElementById('kpiFastAlgo').textContent = '—';
-        document.getElementById('kpiFastTime').textContent = '—';
-        document.getElementById('kpiSpeedup').textContent = '—';
+        setElText('kpiFastAlgo', '—');
+        setElText('kpiFastTime', '— s');
+        setElText('kpiSpeedup', '—');
     }
 
     // Hero KPI: Feasibility
-    document.getElementById('kpiViolations').textContent = `${totalViolations} Total Violations`;
-    document.getElementById('kpiFeasibleStatus').textContent = totalViolations === 0 ? '100% Feasible' : 'Constraint Penalties';
+    setElText('kpiViolations', `${totalViolations} Capacity Violations`);
+    setElText('kpiFeasibleStatus', totalViolations === 0 ? '100% Feasible' : 'Violations Detected');
 
     // 3. Build Side-by-Side Comparison Metrics Table
     const tbody = document.getElementById('compTableBody');
-    tbody.innerHTML = '';
+    if (tbody) {
+        tbody.innerHTML = '';
+        const keys = ['qpso', 'ga', 'exact'];
 
-    const keys = ['qpso', 'ga', 'exact'];
-
-    // Define table rows: [Metric Label, Description/Unit, computeFn(algoKey)]
-    const tableRows = [
-        {
-            label: 'Optimization Status',
-            desc: 'Execution state & feasibility confirmation',
-            render: (k) => {
-                const a = algos[k];
-                if (!a) return '<span style="color:#64748b">Not Selected</span>';
-                if (a.error) return `<span class="diff-tag worse" title="${a.error}">Skipped (Limit)</span>`;
-                if (a.violations === 0) return '<span class="diff-tag better">Optimal Feasible (0 Violations)</span>';
-                return `<span class="diff-tag worse">${a.violations} Violations</span>`;
-            }
-        },
-        {
-            label: 'Total Fleet Distance (km)',
-            desc: 'Combined distance travelled across all vehicle routes',
-            isBestMin: true,
-            valFn: (k) => algos[k] && algos[k].distance_km > 0 ? algos[k].distance_km : null,
-            render: (k, isBest) => {
-                const a = algos[k];
-                if (!a || a.distance_km <= 0) return a && a.error ? '—' : '<span style="color:#64748b">—</span>';
-                let diffTag = '';
-                if (gaDist && k !== 'ga') {
-                    const diffPct = ((a.distance_km - gaDist) / gaDist * 100);
-                    if (diffPct < 0) {
-                        diffTag = `<span class="diff-tag better">${diffPct.toFixed(1)}% vs GA</span>`;
-                    } else if (diffPct > 0) {
-                        diffTag = `<span class="diff-tag worse">+${diffPct.toFixed(1)}% vs GA</span>`;
+        const tableRows = [
+            {
+                label: 'Optimization Status',
+                desc: 'Execution state & feasibility confirmation',
+                render: (k) => {
+                    const a = algos[k];
+                    if (!a) return '<span style="color:#64748b">Not Selected</span>';
+                    if (a.error) return `<span class="diff-tag worse" title="${a.error}">Skipped</span>`;
+                    if (a.violations === 0) return '<span class="diff-tag better">Optimal Feasible (0 Violations)</span>';
+                    return `<span class="diff-tag worse">${a.violations} Violations</span>`;
+                }
+            },
+            {
+                label: 'Total Fleet Distance (km)',
+                desc: 'Combined distance travelled across all vehicle routes',
+                isBestMin: true,
+                valFn: (k) => (algos[k] && algos[k].distance_km > 0) ? algos[k].distance_km : null,
+                render: (k) => {
+                    const a = algos[k];
+                    if (!a || a.distance_km <= 0) return a && a.error ? '—' : '<span style="color:#64748b">—</span>';
+                    let diffTag = '';
+                    if (gaDist && k !== 'ga') {
+                        const diffPct = ((a.distance_km - gaDist) / gaDist * 100);
+                        if (diffPct < 0) {
+                            diffTag = `<span class="diff-tag better">${diffPct.toFixed(1)}% vs GA</span>`;
+                        } else if (diffPct > 0) {
+                            diffTag = `<span class="diff-tag worse">+${diffPct.toFixed(1)}% vs GA</span>`;
+                        }
                     }
+                    return `<b>${a.distance_km.toFixed(2)} km</b> ${diffTag}`;
                 }
-                return `<b>${a.distance_km.toFixed(2)} km</b> ${diffTag}`;
-            }
-        },
-        {
-            label: 'Total Travel Time (hrs)',
-            desc: 'Aggregate driving time across full fleet',
-            isBestMin: true,
-            valFn: (k) => algos[k] && algos[k].time_sec > 0 ? algos[k].time_sec : null,
-            render: (k) => {
-                const a = algos[k];
-                if (!a || a.time_sec <= 0) return '—';
-                const hrs = (a.time_sec / 3600).toFixed(2);
-                const mins = Math.round(a.time_sec / 60);
-                return `<b>${hrs} hrs</b> <span style="font-size:11px; color:#94a3b8;">(${mins} mins)</span>`;
-            }
-        },
-        {
-            label: 'Optimization Runtime (sec)',
-            desc: 'Time taken to compute the routing schedule',
-            isFastestMin: true,
-            valFn: (k) => algos[k] && algos[k].runtime_sec > 0 ? algos[k].runtime_sec : null,
-            render: (k, isFastest) => {
-                const a = algos[k];
-                if (!a || a.runtime_sec === undefined) return '—';
-                let speedupTag = '';
-                if (algos.exact && algos.exact.runtime_sec > 0 && k !== 'exact') {
-                    const speed = (algos.exact.runtime_sec / Math.max(0.001, a.runtime_sec)).toFixed(1);
-                    speedupTag = `<span class="diff-tag better">${speed}x Speedup</span>`;
+            },
+            {
+                label: 'Total Travel Time (hrs)',
+                desc: 'Aggregate driving time across full fleet',
+                isBestMin: true,
+                valFn: (k) => (algos[k] && algos[k].time_sec > 0) ? algos[k].time_sec : null,
+                render: (k) => {
+                    const a = algos[k];
+                    if (!a || a.time_sec <= 0) return '—';
+                    const hrs = (a.time_sec / 3600).toFixed(2);
+                    const mins = Math.round(a.time_sec / 60);
+                    return `<b>${hrs} hrs</b> <span style="font-size:11px; color:#94a3b8;">(${mins} mins)</span>`;
                 }
-                return `<b>${a.runtime_sec.toFixed(3)}s</b> ${speedupTag}`;
+            },
+            {
+                label: 'Optimization Runtime (sec)',
+                desc: 'Time taken to compute the routing schedule',
+                isFastestMin: true,
+                valFn: (k) => (algos[k] && algos[k].runtime_sec !== undefined) ? algos[k].runtime_sec : null,
+                render: (k) => {
+                    const a = algos[k];
+                    if (!a || a.runtime_sec === undefined) return '—';
+                    let speedupTag = '';
+                    if (algos.exact && algos.exact.runtime_sec > 0 && k !== 'exact') {
+                        const speed = (algos.exact.runtime_sec / Math.max(0.001, a.runtime_sec)).toFixed(1);
+                        speedupTag = `<span class="diff-tag better">${speed}x Speedup</span>`;
+                    }
+                    return `<b>${a.runtime_sec.toFixed(3)}s</b> ${speedupTag}`;
+                }
+            },
+            {
+                label: 'Capacity Violations',
+                desc: 'Over-capacity load allocations (0 is strictly required)',
+                render: (k) => {
+                    const a = algos[k];
+                    if (!a || a.distance_km <= 0) return '—';
+                    if (a.violations === 0) return '<b style="color:#10b981;">0 (Strictly Feasible)</b>';
+                    return `<b style="color:#ef4444;">${a.violations} Overloaded</b>`;
+                }
+            },
+            {
+                label: 'Active Vehicles Deployed',
+                desc: 'Number of vehicles utilized out of available fleet',
+                render: (k) => {
+                    const a = algos[k];
+                    if (!a || !a.route_metrics) return '—';
+                    const count = a.route_metrics.length;
+                    return `<b>${count} of ${config.num_vehicles || '—'} vehicles</b>`;
+                }
+            },
+            {
+                label: 'Average Route Distance',
+                desc: 'Mean km travelled per dispatched vehicle',
+                render: (k) => {
+                    const a = algos[k];
+                    if (!a || !a.route_metrics || a.route_metrics.length === 0) return '—';
+                    const avg = (a.distance_km / a.route_metrics.length).toFixed(2);
+                    return `<b>${avg} km</b>`;
+                }
+            },
+            {
+                label: 'Longest Route (Max Distance)',
+                desc: 'Distance and stops of the longest single vehicle route',
+                render: (k) => {
+                    const a = algos[k];
+                    if (!a || !a.route_metrics || a.route_metrics.length === 0) return '—';
+                    const maxRoute = a.route_metrics.reduce((prev, curr) => (curr.distance_km > prev.distance_km) ? curr : prev, a.route_metrics[0]);
+                    return `<b>${maxRoute.distance_km} km</b> <span style="font-size:11px; color:#94a3b8;">(${maxRoute.stops} stops, ${maxRoute.load} units)</span>`;
+                }
+            },
+            {
+                label: 'Average Capacity Utilization',
+                desc: 'Mean percentage of cargo volume filled across fleet',
+                render: (k) => {
+                    const a = algos[k];
+                    if (!a || !a.route_metrics || a.route_metrics.length === 0) return '—';
+                    const avgUtil = (a.route_metrics.reduce((acc, m) => acc + (m.utilization_pct || 0), 0) / a.route_metrics.length).toFixed(1);
+                    return `<b>${avgUtil}%</b>`;
+                }
+            },
+            {
+                label: 'Convergence Iterations',
+                desc: 'Total evolutionary epochs or solver iterations',
+                render: (k) => {
+                    const a = algos[k];
+                    if (!a) return '—';
+                    if (k === 'qpso') return '<b>50 Iterations</b> (Quantum Delta-Well)';
+                    if (k === 'ga') return '<b>50 Generations</b> (Elitist GA)';
+                    if (k === 'exact') return (a.distance_km > 0) ? '<b>Guided Local Search</b> (15s Bound)' : '—';
+                    return '—';
+                }
+            },
+            {
+                label: 'Algorithmic Paradigm',
+                desc: 'Mathematical and optimization methodology',
+                render: (k) => {
+                    if (k === 'qpso') return '<span style="color:#10b981; font-weight:600;">Quantum-Inspired Metaheuristic</span><br><span style="font-size:11px; color:#64748b;">Bloch Sphere Encoding + Delta Potential Well</span>';
+                    if (k === 'ga') return '<span style="color:#ef4444; font-weight:600;">Classical Metaheuristic</span><br><span style="font-size:11px; color:#64748b;">Angular Sweep Clustering + Genetic TSP</span>';
+                    if (k === 'exact') return '<span style="color:#f59e0b; font-weight:600;">Exact / Math Programming</span><br><span style="font-size:11px; color:#64748b;">Google OR-Tools Guided Local Search</span>';
+                    return '—';
+                }
             }
-        },
-        {
-            label: 'Capacity Violations',
-            desc: 'Over-capacity load allocations (0 is strictly required)',
-            render: (k) => {
-                const a = algos[k];
-                if (!a || a.distance_km <= 0) return '—';
-                if (a.violations === 0) return '<b style="color:#10b981;">0 (Strictly Feasible)</b>';
-                return `<b style="color:#ef4444;">${a.violations} Units Overloaded</b>`;
-            }
-        },
-        {
-            label: 'Active Vehicles Deployed',
-            desc: 'Number of vehicles utilized out of available fleet',
-            render: (k) => {
-                const a = algos[k];
-                if (!a || !a.route_metrics) return '—';
-                const count = a.route_metrics.length;
-                return `<b>${count} of ${config.num_vehicles} vehicles</b>`;
-            }
-        },
-        {
-            label: 'Average Route Distance',
-            desc: 'Mean km travelled per dispatched vehicle',
-            render: (k) => {
-                const a = algos[k];
-                if (!a || !a.route_metrics || a.route_metrics.length === 0) return '—';
-                const avg = (a.distance_km / a.route_metrics.length).toFixed(2);
-                return `<b>${avg} km</b>`;
-            }
-        },
-        {
-            label: 'Longest Route (Max Load)',
-            desc: 'Distance and stops of the longest single vehicle route',
-            render: (k) => {
-                const a = algos[k];
-                if (!a || !a.route_metrics || a.route_metrics.length === 0) return '—';
-                const maxRoute = a.route_metrics.reduce((prev, curr) => (curr.distance_km > prev.distance_km) ? curr : prev, a.route_metrics[0]);
-                return `<b>${maxRoute.distance_km} km</b> <span style="font-size:11px; color:#94a3b8;">(${maxRoute.stops} stops, ${maxRoute.load} units)</span>`;
-            }
-        },
-        {
-            label: 'Average Capacity Utilization',
-            desc: 'Mean percentage of cargo volume filled across fleet',
-            render: (k) => {
-                const a = algos[k];
-                if (!a || !a.route_metrics || a.route_metrics.length === 0) return '—';
-                const avgUtil = (a.route_metrics.reduce((acc, m) => acc + m.utilization_pct, 0) / a.route_metrics.length).toFixed(1);
-                return `<b>${avgUtil}%</b>`;
-            }
-        },
-        {
-            label: 'Convergence Iterations',
-            desc: 'Total evolutionary epochs or solver iterations',
-            render: (k) => {
-                const a = algos[k];
-                if (!a) return '—';
-                if (k === 'qpso') return '<b>50 Iterations</b> (Quantum Delta-Well)';
-                if (k === 'ga') return '<b>50 Generations</b> (Elitist GA)';
-                if (k === 'exact') return a.distance_km > 0 ? '<b>Guided Local Search</b> (Branch & Bound)' : '—';
-                return '—';
-            }
-        },
-        {
-            label: 'Algorithmic Paradigm',
-            desc: 'Mathematical and optimization methodology',
-            render: (k) => {
-                if (k === 'qpso') return '<span style="color:#10b981; font-weight:600;">Quantum-Inspired Metaheuristic</span><br><span style="font-size:11px; color:#64748b;">Bloch Sphere Encoding + Delta Potential Well</span>';
-                if (k === 'ga') return '<span style="color:#ef4444; font-weight:600;">Classical Metaheuristic</span><br><span style="font-size:11px; color:#64748b;">Angular Sweep Clustering + Genetic TSP</span>';
-                if (k === 'exact') return '<span style="color:#f59e0b; font-weight:600;">Exact / Math Programming</span><br><span style="font-size:11px; color:#64748b;">Google OR-Tools Guided Local Search</span>';
-                return '—';
-            }
-        }
-    ];
+        ];
 
-    tableRows.forEach(row => {
-        const tr = document.createElement('tr');
+        tableRows.forEach(row => {
+            const tr = document.createElement('tr');
+            let html = `
+                <td class="metric-name">
+                    <div>${row.label}</div>
+                    <div style="font-size:11px; color:#64748b; font-weight:400; margin-top:2px;">${row.desc}</div>
+                </td>
+            `;
 
-        // Column 0: Metric Name
-        let html = `
-            <td class="metric-name">
-                <div>${row.label}</div>
-                <div style="font-size:11px; color:#64748b; font-weight:400; margin-top:2px;">${row.desc}</div>
-            </td>
-        `;
+            let minVal = Infinity, minKey = null;
+            if (row.isBestMin || row.isFastestMin) {
+                keys.forEach(k => {
+                    const v = row.valFn ? row.valFn(k) : null;
+                    if (v !== null && v < minVal) {
+                        minVal = v;
+                        minKey = k;
+                    }
+                });
+            }
 
-        // Check winner for min values
-        let minVal = Infinity, minKey = null;
-        if (row.isBestMin || row.isFastestMin) {
             keys.forEach(k => {
-                const v = row.valFn ? row.valFn(k) : null;
-                if (v !== null && v < minVal) {
-                    minVal = v;
-                    minKey = k;
-                }
+                const isBest = (minKey !== null && k === minKey);
+                const cellClass = isBest ? (row.isFastestMin ? 'best-cell-fast' : 'best-cell') : '';
+                const content = row.render(k, isBest);
+                html += `<td class="${cellClass}">${content}</td>`;
             });
-        }
 
-        keys.forEach(k => {
-            const isBest = (k === minKey);
-            const cellClass = isBest ? (row.isFastestMin ? 'best-cell-fast' : 'best-cell') : '';
-            const content = row.render(k, isBest);
-            html += `<td class="${cellClass}">${content}</td>`;
+            tr.innerHTML = html;
+            tbody.appendChild(tr);
         });
-
-        tr.innerHTML = html;
-        tbody.appendChild(tr);
-    });
+    }
 
     // 4. Render Big Convergence Chart
     renderBigConvergenceChart(algos);
@@ -690,7 +737,9 @@ function renderComparisonMatrix(data) {
     renderFleetDistribution(data);
 
     // 6. Render Route Manifests
-    showManifest(activeManifestAlgo);
+    // Default to the algorithm with lowest distance or first available
+    const manifestAlgo = bestDistAlgo || activeManifestAlgo || 'exact';
+    showManifest(manifestAlgo);
 }
 
 // ---- Render Big Convergence Chart in Comparison View ----
@@ -700,9 +749,9 @@ function renderBigConvergenceChart(algorithms) {
     if (bigConvergenceChart) bigConvergenceChart.destroy();
 
     const datasets = [];
-    Object.keys(algorithms).forEach(key => {
+    Object.keys(algorithms || {}).forEach(key => {
         const algo = algorithms[key];
-        if (!algo.convergence || algo.convergence.length === 0) return;
+        if (!algo || !algo.convergence || algo.convergence.length === 0) return;
         datasets.push({
             label: ALGO_NAMES[key] || key,
             data: algo.convergence,
@@ -760,16 +809,19 @@ function renderFleetDistribution(data) {
     const listEl = document.getElementById('fleetDistributionList');
     if (!listEl) return;
 
-    const qpsoAlgo = data.algorithms.qpso || data.algorithms[Object.keys(data.algorithms)[0]];
-    if (!qpsoAlgo || !qpsoAlgo.route_metrics || qpsoAlgo.route_metrics.length === 0) {
+    const algos = data.algorithms || {};
+    // Use best algorithm or first available
+    let targetAlgo = algos.exact || algos.qpso || algos.ga || null;
+
+    if (!targetAlgo || !targetAlgo.route_metrics || targetAlgo.route_metrics.length === 0) {
         listEl.innerHTML = '<div class="empty-state">No route details available for workload balancing.</div>';
         return;
     }
 
     listEl.innerHTML = '';
-    const cap = data.config ? data.config.capacity : 40;
+    const cap = (data.config && data.config.capacity) ? data.config.capacity : 40;
 
-    qpsoAlgo.route_metrics.forEach(m => {
+    targetAlgo.route_metrics.forEach(m => {
         const item = document.createElement('div');
         item.className = 'fleet-bar-item';
         item.innerHTML = `
@@ -797,7 +849,7 @@ function showManifest(algoKey) {
     const contentEl = document.getElementById('routeManifestContent');
     if (!contentEl) return;
 
-    if (!latestSimulationData || !latestSimulationData.algorithms[algoKey]) {
+    if (!latestSimulationData || !latestSimulationData.algorithms || !latestSimulationData.algorithms[algoKey]) {
         contentEl.innerHTML = `<div class="empty-state">${ALGO_NAMES[algoKey] || algoKey} was not selected in the latest simulation run.</div>`;
         return;
     }
@@ -843,9 +895,9 @@ function renderConvergenceChart(algorithms) {
     if (convergenceChart) convergenceChart.destroy();
 
     const datasets = [];
-    Object.keys(algorithms).forEach(key => {
+    Object.keys(algorithms || {}).forEach(key => {
         const algo = algorithms[key];
-        if (!algo.convergence || algo.convergence.length === 0) return;
+        if (!algo || !algo.convergence || algo.convergence.length === 0) return;
         datasets.push({
             label: ALGO_NAMES[key] ? ALGO_NAMES[key].split(' ')[0] : key,
             data: algo.convergence,
@@ -858,11 +910,12 @@ function renderConvergenceChart(algorithms) {
         });
     });
 
+    const chartContainer = document.getElementById('convergenceChart');
     if (datasets.length === 0) {
-        document.getElementById('convergenceChart').style.display = 'none';
+        if (chartContainer) chartContainer.style.display = 'none';
         return;
     }
-    document.getElementById('convergenceChart').style.display = 'block';
+    if (chartContainer) chartContainer.style.display = 'block';
 
     convergenceChart = new Chart(canvas, {
         type: 'line',
@@ -891,7 +944,7 @@ function copyTableMarkdown() {
         return;
     }
 
-    const algos = latestSimulationData.algorithms;
+    const algos = latestSimulationData.algorithms || {};
     const q = algos.qpso || {};
     const g = algos.ga || {};
     const e = algos.exact || {};
@@ -902,7 +955,7 @@ function copyTableMarkdown() {
         `| :--- | :--- | :--- | :--- |`,
         `| **Fleet Distance (km)** | ${q.distance_km ? q.distance_km + ' km' : '—'} | ${g.distance_km ? g.distance_km + ' km' : '—'} | ${e.distance_km && e.distance_km > 0 ? e.distance_km + ' km' : (e.error || '—')} |`,
         `| **Travel Time (hrs)** | ${q.time_sec ? (q.time_sec/3600).toFixed(2) + 'h' : '—'} | ${g.time_sec ? (g.time_sec/3600).toFixed(2) + 'h' : '—'} | ${e.time_sec && e.time_sec > 0 ? (e.time_sec/3600).toFixed(2) + 'h' : '—'} |`,
-        `| **Runtime (sec)** | ${q.runtime_sec ? q.runtime_sec.toFixed(3) + 's' : '—'} | ${g.runtime_sec ? g.runtime_sec.toFixed(3) + 's' : '—'} | ${e.runtime_sec ? e.runtime_sec.toFixed(3) + 's' : '—'} |`,
+        `| **Runtime (sec)** | ${q.runtime_sec !== undefined ? q.runtime_sec.toFixed(3) + 's' : '—'} | ${g.runtime_sec !== undefined ? g.runtime_sec.toFixed(3) + 's' : '—'} | ${e.runtime_sec !== undefined ? e.runtime_sec.toFixed(3) + 's' : '—'} |`,
         `| **Constraint Violations** | ${q.violations !== undefined ? q.violations : '—'} | ${g.violations !== undefined ? g.violations : '—'} | ${e.violations !== undefined ? e.violations : '—'} |`,
         `| **Active Vehicles** | ${q.route_metrics ? q.route_metrics.length : '—'} | ${g.route_metrics ? g.route_metrics.length : '—'} | ${e.route_metrics ? e.route_metrics.length : '—'} |`
     ].join('\n');
@@ -933,10 +986,12 @@ function exportResultsJSON() {
 
 // ---- Helpers ----
 function clearMap() {
-    customerMarkers.forEach(m => map.removeLayer(m));
-    customerMarkers = [];
-    Object.values(routeLayers).forEach(layers => layers.forEach(l => map.removeLayer(l)));
-    routeLayers = {};
+    if (map) {
+        customerMarkers.forEach(m => map.removeLayer(m));
+        customerMarkers = [];
+        Object.values(routeLayers).forEach(layers => layers.forEach(l => map.removeLayer(l)));
+        routeLayers = {};
+    }
 }
 
 function sleep(ms) {

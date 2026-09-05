@@ -13,7 +13,7 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
     <div class="app-container">
@@ -206,7 +206,10 @@
                             <div class="hero-body">
                                 <div class="hero-title">Best Distance Champion</div>
                                 <div class="hero-val" id="kpiBestAlgo">—</div>
-                                <div class="hero-sub" id="kpiBestDist">— km (<span id="kpiDistMargin">—</span>)</div>
+                                <div class="hero-sub">
+                                    <span id="kpiBestDist">— km</span>
+                                    <span class="diff-tag better" id="kpiDistMargin">—</span>
+                                </div>
                             </div>
                         </div>
                         <div class="hero-card speed-card">
@@ -214,7 +217,10 @@
                             <div class="hero-body">
                                 <div class="hero-title">Fastest Convergence</div>
                                 <div class="hero-val" id="kpiFastAlgo">—</div>
-                                <div class="hero-sub" id="kpiFastTime">— s (<span id="kpiSpeedup">—</span>)</div>
+                                <div class="hero-sub">
+                                    <span id="kpiFastTime">— s</span>
+                                    <span class="diff-tag better" id="kpiSpeedup">—</span>
+                                </div>
                             </div>
                         </div>
                         <div class="hero-card feasible-card">
@@ -222,7 +228,9 @@
                             <div class="hero-body">
                                 <div class="hero-title">Feasibility & Constraints</div>
                                 <div class="hero-val" id="kpiFeasibleStatus">100% Feasible</div>
-                                <div class="hero-sub" id="kpiViolations">0 Capacity Violations</div>
+                                <div class="hero-sub">
+                                    <span id="kpiViolations">0 Capacity Violations</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -312,6 +320,6 @@
         </main>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=3"></script>
 </body>
 </html>
