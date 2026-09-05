@@ -853,16 +853,26 @@ class HQGLSSolver:
                         cust_route_idx[c] = r_i
 
             cw_routes = [r for r in cw_routes if r]
-            while len(cw_routes) > V:
+            attempts = 0
+            while len(cw_routes) > V and attempts < 20:
+                attempts += 1
                 smallest = min(range(len(cw_routes)), key=lambda k: len(cw_routes[k]))
                 sr = cw_routes.pop(smallest)
                 for c in sr:
+                    inserted = False
                     for tgt in range(len(cw_routes)):
                         if sum(self.demands[x] for x in cw_routes[tgt]) + self.demands[c] <= self.cap:
                             cw_routes[tgt].append(c)
+                            inserted = True
                             break
-                    else:
-                        cw_routes.append([c])
+                    if not inserted and len(cw_routes) > 0:
+                        min_tgt = min(range(len(cw_routes)), key=lambda t: sum(self.demands[x] for x in cw_routes[t]))
+                        cw_routes[min_tgt].append(c)
+            while len(cw_routes) > V:
+                extra = cw_routes.pop()
+                if cw_routes:
+                    min_tgt = min(range(len(cw_routes)), key=lambda t: sum(self.demands[x] for x in cw_routes[t]))
+                    cw_routes[min_tgt].extend(extra)
             while len(cw_routes) < V:
                 cw_routes.append([])
             candidate_solutions.append([self._clean(r) for r in cw_routes])
@@ -890,7 +900,7 @@ class HQGLSSolver:
             X[m, :, 0] = (angles + np.random.normal(0, 0.35, V)) % (2 * math.pi)
             X[m, :, 1] = np.clip(math.pi/2 + np.random.normal(0, 0.3, V), 0.1, math.pi - 0.1)
 
-        for m in range(min(M, 8)):
+        for m in range(min(M, 4)):
             pos = X[m]
             c_y = self.depot[0] + self.r_max * (np.sin(pos[:, 1] / 2.0)**2) * np.sin(pos[:, 0])
             c_x = self.depot[1] + self.r_max * (np.sin(pos[:, 1] / 2.0)**2) * np.cos(pos[:, 0])
@@ -930,12 +940,13 @@ class HQGLSSolver:
             candidate_solutions.append(routes)
 
         # 4. Filter & Evaluate Candidates
-        best_routes = None
-        best_cost = float('inf')
+        if not candidate_solutions:
+            candidate_solutions.append([list(range(self.N))] + [[] for _ in range(V - 1)])
+
+        best_routes = [r[:] for r in candidate_solutions[0]]
+        best_cost = sum(self._route_dist(r) for r in best_routes)
 
         for sol in candidate_solutions:
-            if (time.time() - t0) > (self.time_limit * 0.55):
-                break
             routes = [r[:] for r in sol]
             loads = [sum(self.demands[c] for c in r) for r in routes]
             routes, loads = self._inter_search(routes, loads)
@@ -944,6 +955,8 @@ class HQGLSSolver:
                 best_cost = cost
                 best_routes = [r[:] for r in routes]
             history.append(round(best_cost / 1000.0, 2))
+            if (time.time() - t0) > (self.time_limit * 0.55):
+                break
 
         # 5. Multi-Stage Transverse-Field Quantum Tunneling & ALNS Ruin/Recreate
         routes = [r[:] for r in best_routes]
