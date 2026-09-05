@@ -46,8 +46,19 @@
             <div class="config-section">
                 <h3>🚛 Fleet Configuration</h3>
                 <div class="slider-group">
-                    <label>Depots <span id="depotVal">1</span></label>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <label style="margin-bottom:0;">Distribution Depots <span id="depotVal" style="color:var(--accent-cyan); font-weight:800;">1</span></label>
+                        <span style="font-size:10px; color:#64748b;">(1 to 10 Hubs)</span>
+                    </div>
                     <input type="range" id="numDepots" min="1" max="10" value="1">
+                    <div class="depot-presets">
+                        <button type="button" class="preset-pill active" onclick="setDepots(1)">1 Depot</button>
+                        <button type="button" class="preset-pill" onclick="setDepots(2)">2</button>
+                        <button type="button" class="preset-pill" onclick="setDepots(3)">3</button>
+                        <button type="button" class="preset-pill" onclick="setDepots(5)">5</button>
+                        <button type="button" class="preset-pill" onclick="setDepots(8)">8</button>
+                        <button type="button" class="preset-pill" onclick="setDepots(10)">10 Depots</button>
+                    </div>
                 </div>
                 <div class="slider-group">
                     <label>Vehicles <span id="vehVal">6</span></label>

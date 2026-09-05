@@ -183,7 +183,30 @@ function placeDepot(lat, lon) {
     }
 }
 
-// ---- Slider Setup ----
+// ---- Slider Setup & Depot Controls ----
+function setDepots(val) {
+    const el = document.getElementById('numDepots');
+    const disp = document.getElementById('depotVal');
+    if (el) el.value = val;
+    if (disp) disp.textContent = val;
+
+    // Highlight active preset pill
+    document.querySelectorAll('.depot-presets .preset-pill').forEach(btn => {
+        const txt = btn.textContent.trim();
+        const btnVal = parseInt(txt);
+        btn.classList.toggle('active', btnVal === val || (val === 1 && txt.includes('1')));
+    });
+
+    // Auto-adjust vehicles if vehicles < depots (each depot requires at least 1 vehicle)
+    const vehEl = document.getElementById('numVehicles');
+    const vehDisp = document.getElementById('vehVal');
+    if (vehEl && parseInt(vehEl.value) < val) {
+        vehEl.value = val;
+        if (vehDisp) vehDisp.textContent = val;
+    }
+}
+window.setDepots = setDepots;
+
 function initSliders() {
     const sliders = [
         { id: 'numDepots', display: 'depotVal' },
@@ -197,6 +220,20 @@ function initSliders() {
         if (el && disp) {
             el.addEventListener('input', () => {
                 disp.textContent = el.value;
+                if (s.id === 'numDepots') {
+                    const val = parseInt(el.value);
+                    document.querySelectorAll('.depot-presets .preset-pill').forEach(btn => {
+                        const txt = btn.textContent.trim();
+                        const btnVal = parseInt(txt);
+                        btn.classList.toggle('active', btnVal === val || (val === 1 && txt.includes('1')));
+                    });
+                    const vehEl = document.getElementById('numVehicles');
+                    const vehDisp = document.getElementById('vehVal');
+                    if (vehEl && parseInt(vehEl.value) < val) {
+                        vehEl.value = val;
+                        if (vehDisp) vehDisp.textContent = val;
+                    }
+                }
             });
         }
     });
@@ -693,6 +730,28 @@ function renderComparisonMatrix(data) {
                         }
                     }
                     return `<b>${a.distance_km.toFixed(2)} km</b> ${diffTag}`;
+                }
+            },
+            {
+                label: 'Gap vs Exact Solver (%)',
+                desc: 'Relative distance gap compared to Google OR-Tools Guided Local Search',
+                render: (k) => {
+                    const a = algos[k];
+                    if (!a || a.distance_km <= 0) return '<span style="color:#64748b">—</span>';
+                    const exactDist = (algos.exact && algos.exact.distance_km > 0) ? algos.exact.distance_km : null;
+                    if (!exactDist) return '<span style="color:#64748b">Exact not run</span>';
+                    if (k === 'exact') return '<b style="color:#f59e0b;">Baseline (0.00%)</b>';
+                    const diffKm = a.distance_km - exactDist;
+                    const diffPct = (diffKm / exactDist) * 100;
+                    if (diffPct < -0.05) {
+                        return `<b style="color:#00e5ff;">${diffPct.toFixed(2)}%</b> <span class="diff-tag better">★ BEATS EXACT (-${Math.abs(diffKm).toFixed(2)} km)</span>`;
+                    } else if (Math.abs(diffPct) <= 0.05) {
+                        return `<b style="color:#10b981;">0.00%</b> <span class="diff-tag better">MATCHES EXACT</span>`;
+                    } else if (diffPct <= 1.5) {
+                        return `<b style="color:#10b981;">+${diffPct.toFixed(2)}%</b> <span class="diff-tag better">Within 1.5% (+${diffKm.toFixed(2)} km)</span>`;
+                    } else {
+                        return `<b style="color:#ef4444;">+${diffPct.toFixed(2)}%</b> <span class="diff-tag worse">+${diffKm.toFixed(2)} km</span>`;
+                    }
                 }
             },
             {

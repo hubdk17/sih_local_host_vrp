@@ -246,6 +246,40 @@ body {
     background: linear-gradient(135deg, #1e293b, #334155);
 }
 
+/* ---- Depot Presets Pills ---- */
+.depot-presets {
+    display: flex;
+    gap: 5px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.preset-pill {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.preset-pill:hover {
+    background: rgba(0, 229, 255, 0.15);
+    color: #00e5ff;
+    border-color: rgba(0, 229, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.preset-pill.active {
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.3), rgba(99, 102, 241, 0.3));
+    color: #00e5ff;
+    border-color: #00e5ff;
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);
+}
+
 /* ---- Progress ---- */
 .progress-bar {
     display: none;

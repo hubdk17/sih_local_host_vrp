@@ -197,16 +197,32 @@ def _run_solve(job_id, data):
                 nearest_d = min(range(num_depots), key=lambda d: math.hypot(c[0] - depots_coords[d][0], c[1] - depots_coords[d][1]))
                 cust_clusters[nearest_d].append(i)
 
-            # Distribute vehicles proportionally to customer count, at least 1 per active depot
-            base_vehs = num_vehicles // num_depots
-            vehs_per_depot = {d: base_vehs for d in range(num_depots)}
-            rem_vehs = num_vehicles % num_depots
-            sorted_depots = sorted(range(num_depots), key=lambda d: len(cust_clusters[d]), reverse=True)
-            for d in sorted_depots[:rem_vehs]:
-                vehs_per_depot[d] += 1
+            # Ensure total vehicles is at least num_depots
+            if num_vehicles < num_depots:
+                num_vehicles = num_depots
+
+            # Distribute vehicles proportionally to cluster demand (Hamilton Largest Remainder)
+            vehs_per_depot = {d: 1 for d in range(num_depots)}
+            remaining_vehs = max(0, num_vehicles - num_depots)
+            c_demands = [sum(demands[i] for i in cust_clusters[d]) for d in range(num_depots)]
+            total_dem = max(1, sum(c_demands))
+            exact_shares = [remaining_vehs * c_demands[d] / total_dem for d in range(num_depots)]
             for d in range(num_depots):
-                if vehs_per_depot[d] < 1:
-                    vehs_per_depot[d] = 1
+                vehs_per_depot[d] += int(exact_shares[d])
+            leftover = num_vehicles - sum(vehs_per_depot.values())
+            rem_ranks = sorted(range(num_depots), key=lambda d: exact_shares[d] - int(exact_shares[d]), reverse=True)
+            for d in rem_ranks[:leftover]:
+                vehs_per_depot[d] += 1
+
+            # Safeguard capacity feasibility
+            for d in range(num_depots):
+                while c_demands[d] > vehs_per_depot[d] * capacity:
+                    donor = max(range(num_depots), key=lambda k: (vehs_per_depot[k] * capacity - c_demands[k]) if vehs_per_depot[k] > 1 else -999)
+                    if donor != d and vehs_per_depot[donor] > 1 and (vehs_per_depot[donor] - 1) * capacity >= c_demands[donor]:
+                        vehs_per_depot[donor] -= 1
+                        vehs_per_depot[d] += 1
+                    else:
+                        break
 
         # 4. Precompute Dijkstra matrices for each depot cluster
         jobs[job_id]["progress"] = "Computing Dijkstra shortest path matrices..."
@@ -254,6 +270,9 @@ def _run_solve(job_id, data):
                     continue
 
                 res = solver.solve()
+                if algo_name == "exact" and (res.get("distance_km", -1) == -1 or not any(res.get("routes", []))):
+                    solver = ExactSolver(d_time_d, d_len_d, sub_demands, v_d, capacity, time_limit=max(6, int(20 / num_depots)))
+                    res = solver.solve()
                 total_runtime += res.get("runtime_sec", 0.0)
                 total_violations += res.get("violations", 0)
                 if not conv_hist and res.get("convergence"):
