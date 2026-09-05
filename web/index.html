@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum-Inspired VRP — Interactive Route Optimization Platform</title>
+    <meta name="description" content="Interactive web platform for Quantum-Inspired Vehicle Routing Problem optimization with real-time map simulation and comparative benchmarking.">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- ======== SIDEBAR ======== -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>⚛️ Quantum VRP Platform</h1>
+                <p>Interactive Route Optimization & Benchmarking</p>
+            </div>
+
+            <!-- City / Location Selection -->
+            <div class="config-section">
+                <h3>📍 Location</h3>
+                <div class="form-group">
+                    <label for="citySelect">Select City (Pre-Cached)</label>
+                    <select id="citySelect">
+                        <option value="">— Loading cities... —</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Or click on the map to place depot</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="number" id="depotLat" placeholder="Latitude" step="0.0001" style="flex:1">
+                        <input type="number" id="depotLon" placeholder="Longitude" step="0.0001" style="flex:1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fleet Configuration -->
+            <div class="config-section">
+                <h3>🚛 Fleet Configuration</h3>
+                <div class="slider-group">
+                    <label>Vehicles <span id="vehVal">6</span></label>
+                    <input type="range" id="numVehicles" min="2" max="20" value="6">
+                </div>
+                <div class="slider-group">
+                    <label>Customers <span id="custVal">50</span></label>
+                    <input type="range" id="numCustomers" min="10" max="200" value="50" step="5">
+                </div>
+                <div class="slider-group">
+                    <label>Vehicle Capacity <span id="capVal">40</span></label>
+                    <input type="range" id="capacity" min="15" max="100" value="40" step="5">
+                </div>
+            </div>
+
+            <!-- Algorithm Selection -->
+            <div class="config-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="margin-bottom:0;">⚡ Algorithms to Compare</h3>
+                    <button type="button" onclick="selectAllAlgos()" style="background:none; border:none; color:var(--accent-cyan); font-size:11px; font-weight:700; cursor:pointer;">Select All</button>
+                </div>
+                <div class="algo-checkboxes">
+                    <label class="algo-checkbox">
+                        <input type="checkbox" id="algoQPSO" checked>
+                        <span class="algo-dot qpso"></span>
+                        <div style="flex:1;">
+                            <span class="algo-name">Delta-Well QPSO</span>
+                            <div style="font-size:10px; color:#10b981; font-weight:600;">Quantum-Inspired Metaheuristic</div>
+                        </div>
+                    </label>
+                    <label class="algo-checkbox">
+                        <input type="checkbox" id="algoGA" checked>
+                        <span class="algo-dot ga"></span>
+                        <div style="flex:1;">
+                            <span class="algo-name">Classical Heuristic GA</span>
+                            <div style="font-size:10px; color:#ef4444; font-weight:600;">Genetic Algorithm Baseline</div>
+                        </div>
+                    </label>
+                    <label class="algo-checkbox">
+                        <input type="checkbox" id="algoExact" checked>
+                        <span class="algo-dot exact"></span>
+                        <div style="flex:1;">
+                            <span class="algo-name">Exact Solver (OR-Tools)</span>
+                            <div style="font-size:10px; color:#f59e0b; font-weight:600;">Guided Local Search (&le;100 cust)</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Run Button -->
+            <div class="config-section">
+                <button class="btn-run" id="btnRun" onclick="runSimulation()">
+                    ▶ Run Simulation
+                </button>
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-track">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">Initializing...</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ======== MAIN CONTENT AREA ======== -->
+        <main class="main-content">
+            <!-- Top View Mode Switcher -->
+            <header class="top-nav">
+                <div class="nav-brand">
+                    <span class="status-indicator live"></span>
+                    <span class="status-text" id="systemStatus">Ready for Simulation</span>
+                </div>
+                <div class="view-tabs">
+                    <button class="view-tab active" id="tabMap" onclick="switchView('map')">
+                        <span class="tab-icon">🗺️</span> Map & Route View
+                    </button>
+                    <button class="view-tab" id="tabComparison" onclick="switchView('comparison')">
+                        <span class="tab-icon">📊</span> Algorithm Comparison Matrix
+                        <span class="tab-badge" id="resultsBadge">New</span>
+                    </button>
+                </div>
+                <div class="nav-actions">
+                    <button class="btn-nav" id="btnQuickCompare" onclick="switchView('comparison')" title="View comparison table">
+                        ⚡ Quick Compare
+                    </button>
+                </div>
+            </header>
+
+            <!-- ======== VIEW 1: MAP VIEW ======== -->
+            <section class="view-section active" id="viewMap">
+                <div class="map-container">
+                    <div id="map"></div>
+
+                    <!-- Quick Results Overlay on Map -->
+                    <div class="results-overlay" id="resultsOverlay">
+                        <!-- Top Action Banner -->
+                        <div class="results-action-banner">
+                            <button class="btn-view-matrix" onclick="switchView('comparison')">
+                                📊 Open Full Comparison Table & Metrics →
+                            </button>
+                        </div>
+
+                        <!-- Comparison Summary Card -->
+                        <div class="results-card" id="summaryCard">
+                            <div class="card-header-flex">
+                                <h3>📊 Benchmark Quick Summary</h3>
+                                <span class="badge-pill" id="winnerBadge">—</span>
+                            </div>
+                            <div id="comparisonBars"></div>
+                            <div class="route-toggles-container">
+                                <label class="toggles-label">Route Display Layers:</label>
+                                <div class="route-toggles" id="routeToggles"></div>
+                            </div>
+                        </div>
+
+                        <!-- Individual Algorithm Cards (injected by JS) -->
+                        <div id="algoCards"></div>
+
+                        <!-- Convergence Chart -->
+                        <div class="chart-container" id="convergenceChart">
+                            <h3>📈 Convergence History</h3>
+                            <canvas id="chartCanvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ======== VIEW 2: DEDICATED COMPARISON MATRIX VIEW ======== -->
+            <section class="view-section" id="viewComparison">
+                <div class="comparison-container">
+                    <!-- Comparison Header -->
+                    <div class="comp-header-card">
+                        <div class="comp-header-info">
+                            <h2>⚡ Multi-Algorithm Performance Benchmark</h2>
+                            <p id="compSubheading">Configure fleet parameters and run simulation to populate real-time benchmark metrics.</p>
+                            <div class="comp-meta-tags" id="compMetaTags">
+                                <span class="meta-tag">City: <b id="metaTagCity">Delhi</b></span>
+                                <span class="meta-tag">Customers: <b id="metaTagCust">50</b></span>
+                                <span class="meta-tag">Vehicles: <b id="metaTagVeh">6</b></span>
+                                <span class="meta-tag">Capacity: <b id="metaTagCap">40</b></span>
+                                <span class="meta-tag">Timestamp: <b id="metaTagTime">—</b></span>
+                            </div>
+                        </div>
+                        <div class="comp-header-actions">
+                            <button class="btn-action" onclick="switchView('map')">
+                                🗺️ Back to Map
+                            </button>
+                            <button class="btn-action secondary" onclick="copyTableMarkdown()">
+                                📋 Copy Markdown Table
+                            </button>
+                            <button class="btn-action secondary" onclick="exportResultsJSON()">
+                                📥 Export JSON
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Hero Winner Cards -->
+                    <div class="hero-kpi-grid" id="heroKpiGrid">
+                        <div class="hero-card winner-card">
+                            <div class="hero-icon">🏆</div>
+                            <div class="hero-body">
+                                <div class="hero-title">Best Distance Champion</div>
+                                <div class="hero-val" id="kpiBestAlgo">—</div>
+                                <div class="hero-sub" id="kpiBestDist">— km (<span id="kpiDistMargin">—</span>)</div>
+                            </div>
+                        </div>
+                        <div class="hero-card speed-card">
+                            <div class="hero-icon">⚡</div>
+                            <div class="hero-body">
+                                <div class="hero-title">Fastest Convergence</div>
+                                <div class="hero-val" id="kpiFastAlgo">—</div>
+                                <div class="hero-sub" id="kpiFastTime">— s (<span id="kpiSpeedup">—</span>)</div>
+                            </div>
+                        </div>
+                        <div class="hero-card feasible-card">
+                            <div class="hero-icon">🛡️</div>
+                            <div class="hero-body">
+                                <div class="hero-title">Feasibility & Constraints</div>
+                                <div class="hero-val" id="kpiFeasibleStatus">100% Feasible</div>
+                                <div class="hero-sub" id="kpiViolations">0 Capacity Violations</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comprehensive Comparison Metrics Table -->
+                    <div class="comp-table-card">
+                        <div class="card-header-flex">
+                            <h3>📊 Side-by-Side Algorithm Comparison Metrics</h3>
+                            <span class="table-legend">★ Highlighted cells represent best performance</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="comp-table" id="comparisonTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 28%;">Performance Metric / KPI</th>
+                                        <th style="width: 24%;" class="th-qpso">
+                                            <div class="th-content">
+                                                <span class="algo-dot qpso"></span>
+                                                <span>Delta-Well QPSO</span>
+                                                <span class="algo-badge-quantum">Quantum</span>
+                                            </div>
+                                        </th>
+                                        <th style="width: 24%;" class="th-ga">
+                                            <div class="th-content">
+                                                <span class="algo-dot ga"></span>
+                                                <span>Classical GA</span>
+                                                <span class="algo-badge-heuristic">Heuristic</span>
+                                            </div>
+                                        </th>
+                                        <th style="width: 24%;" class="th-exact">
+                                            <div class="th-content">
+                                                <span class="algo-dot exact"></span>
+                                                <span>Exact Solver</span>
+                                                <span class="algo-badge-exact">OR-Tools</span>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="compTableBody">
+                                    <tr>
+                                        <td colspan="4" class="empty-state">
+                                            No simulation results yet. Run a simulation from the sidebar to view detailed comparison metrics.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Side-by-Side Graphs & Visual Bars -->
+                    <div class="comp-grid-two">
+                        <!-- Big Convergence Chart -->
+                        <div class="comp-chart-card">
+                            <h3>📈 Iterative Convergence Comparison</h3>
+                            <p class="chart-desc">Objective fitness curve progression across optimization iterations/generations.</p>
+                            <div class="big-chart-wrapper">
+                                <canvas id="bigChartCanvas"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Vehicle Utilization & Distribution -->
+                        <div class="comp-chart-card">
+                            <h3>🚛 Fleet Workload & Route Balance</h3>
+                            <p class="chart-desc">Per-vehicle distance distribution and capacity utilization balance.</p>
+                            <div id="fleetDistributionList">
+                                <div class="empty-state">Run simulation to inspect fleet load distribution.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vehicle-by-Vehicle Route Details Explorer -->
+                    <div class="comp-routes-card">
+                        <div class="card-header-flex">
+                            <h3>🗺️ Vehicle Route Schedules & Manifests</h3>
+                            <div class="algo-pill-selector" id="routeManifestTabs">
+                                <button class="pill-tab active" data-algo="qpso" onclick="showManifest('qpso')">Delta-Well QPSO</button>
+                                <button class="pill-tab" data-algo="ga" onclick="showManifest('ga')">Classical GA</button>
+                                <button class="pill-tab" data-algo="exact" onclick="showManifest('exact')">Exact Solver</button>
+                            </div>
+                        </div>
+                        <div id="routeManifestContent" class="manifest-content">
+                            <div class="empty-state">Select an algorithm to inspect vehicle stop sequences and payloads.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
