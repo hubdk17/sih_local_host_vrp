@@ -1,0 +1,8 @@
+requirements.txt
+app.py
+src/
+scratch/
+outputs/
+data/
+*.py
+*.log
