@@ -1,15 +1,7 @@
 {
-  "version": 2,
   "cleanUrls": true,
   "trailingSlash": false,
-  "public": true,
-  "rewrites": [
-    { "source": "/assets/(.*)", "destination": "/web/assets/$1" },
-    { "source": "/style.css", "destination": "/web/style.css" },
-    { "source": "/app.js", "destination": "/web/app.js" },
-    { "source": "/", "destination": "/web/index.html" },
-    { "source": "/(.*)", "destination": "/web/$1" }
-  ],
+  "outputDirectory": "web",
   "headers": [
     {
       "source": "/assets/(.*)",
