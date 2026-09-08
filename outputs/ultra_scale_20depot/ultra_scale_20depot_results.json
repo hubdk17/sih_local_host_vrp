@@ -1,0 +1,14 @@
+{
+  "depots": 20,
+  "customers": 500,
+  "vehicles": 45,
+  "capacity": 35,
+  "total_hq_dist_km": 1138.31,
+  "total_exact_dist_km": 1116.22,
+  "total_qpso_dist_km": 1337.32,
+  "total_ga_dist_km": 1355.15,
+  "gap_pct_vs_exact": 1.98,
+  "total_hq_time_s": 13.62,
+  "total_exact_time_s": 38.05,
+  "speedup_factor": 2.79
+}

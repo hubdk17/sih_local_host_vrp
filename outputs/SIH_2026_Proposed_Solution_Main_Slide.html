@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SIH 2026 - Main Proposed Solution Slide</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0b0f19;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 10px;
+    color: #333;
+  }
+  .controls {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+  }
+  .btn {
+    background: linear-gradient(135deg, #167cc5, #0056b3);
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(22, 124, 197, 0.4);
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(22, 124, 197, 0.6);
+  }
+  .badge-tag {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  /* Slide 16:9 Container */
+  .slide-viewport {
+    width: 1333px;
+    height: 750px;
+    background: #ffffff;
+    position: relative;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  /* Header section */
+  .slide-header {
+    height: 95px;
+    padding: 12px 30px 0 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+  }
+  .team-oval {
+    width: 135px;
+    height: 68px;
+    border: 1.5px solid #8e68b3;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: #3b2a59;
+    font-weight: 500;
+    line-height: 1.25;
+    background: #faf8ff;
+  }
+  .team-oval strong {
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .title-center {
+    text-align: center;
+    flex: 1;
+    padding: 0 20px;
+  }
+  .title-center h1 {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: #111827;
+  }
+  .title-center p {
+    font-size: 13px;
+    color: #4b5563;
+    margin-top: 3px;
+    font-weight: 500;
+  }
+  .sih-logo-wrapper {
+    width: 165px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .sih-logo-wrapper img {
+    height: 72px;
+    object-fit: contain;
+  }
+  /* Slide main topic banner */
+  .topic-banner {
+    padding: 2px 30px 6px 30px;
+    border-bottom: 2.5px solid #1f497d;
+    margin: 0 30px;
+  }
+  .topic-banner h2 {
+    color: #1f497d;
+    font-size: 21px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  /* Body Content: 50/50 Split */
+  .slide-body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1.02fr 0.98fr;
+    gap: 22px;
+    padding: 14px 30px 10px 30px;
+  }
+  /* Left Column */
+  .left-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .content-section {
+    margin-bottom: 9px;
+  }
+  .section-title {
+    font-size: 14.5px;
+    font-weight: 800;
+    color: #1f497d;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section-bullet {
+    list-style: none;
+    padding-left: 14px;
+  }
+  .section-bullet li {
+    font-size: 11.8px;
+    line-height: 1.38;
+    color: #27272a;
+    position: relative;
+    margin-bottom: 4px;
+  }
+  .section-bullet li::before {
+    content: "–";
+    position: absolute;
+    left: -12px;
+    font-weight: bold;
+    color: #167cc5;
+  }
+  .highlight-term {
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .math-code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    background: #f1f5f9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 11px;
+    color: #0369a1;
+  }
+  /* Metric Badges Grid */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .kpi-pill {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 6px 4px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+  .kpi-val {
+    font-size: 12.5px;
+    font-weight: 800;
+    display: block;
+    line-height: 1.2;
+  }
+  .kpi-val.blue { color: #0284c7; }
+  .kpi-val.green { color: #15803d; }
+  .kpi-val.navy { color: #1f497d; }
+  .kpi-val.purple { color: #7e22ce; }
+  .kpi-label {
+    font-size: 9.5px;
+    color: #64748b;
+    font-weight: 500;
+    line-height: 1.1;
+    margin-top: 2px;
+    display: block;
+  }
+  /* Right Column: Graphs */
+  .right-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .graph-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 6px 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .graph-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .graph-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #1f497d;
+    letter-spacing: 0.2px;
+  }
+  .graph-badge {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+  }
+  .graph-img-container {
+    flex: 1;
+    overflow: hidden;
+    border-radius: 4px;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .graph-img-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  /* Slide Footer */
+  .slide-footer {
+    height: 38px;
+    background: #167cc5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+    color: #ffffff;
+    font-size: 12px;
+  }
+  .footer-template-text {
+    font-weight: 500;
+    letter-spacing: 0.2px;
+  }
+  .footer-page-num {
+    font-weight: 800;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <span class="badge-tag">SIH 2026 Presentation Preview</span>
+  <a href="SIH_2026_Proposed_Solution_Main_Slide.pptx" class="btn" download>📥 Download Main Slide (.PPTX)</a>
+  <span class="badge-tag">16:9 Widescreen (13.33" × 7.50")</span>
+</div>
+
+<!-- SLIDE CONTAINER -->
+<div class="slide-viewport">
+
+  <!-- TOP HEADER -->
+  <div class="slide-header">
+    <div class="team-oval">
+      <span>Your Team</span>
+      <strong>Name / ID</strong>
+    </div>
+
+    <div class="title-center">
+      <h1>QUANTUM-INSPIRED HYBRID VRP ENGINE (Q-HQGLS)</h1>
+      <p>Real-Time Dynamic Congestion-Aware Multi-Depot Logistics Optimization for Indian Megacities</p>
+    </div>
+
+    <div class="sih-logo-wrapper">
+      <img src="sih_logo_extracted.png" alt="Smart India Hackathon 2026 Logo">
+    </div>
+  </div>
+
+  <!-- MAIN TOPIC TITLE UNDERLINE -->
+  <div class="topic-banner">
+    <h2>❖ Proposed Solution (Describe your Idea/Solution/Prototype)</h2>
+  </div>
+
+  <!-- MAIN BODY SPLIT -->
+  <div class="slide-body">
+    
+    <!-- LEFT COLUMN: CONTENT -->
+    <div class="left-col">
+      
+      <!-- Section 1 -->
+      <div class="content-section">
+        <div class="section-title">
+          <span>•</span> Detailed Explanation of the Proposed Solution:
+        </div>
+        <ul class="section-bullet">
+          <li>
+            <span class="highlight-term">Quantum-Inspired Hybrid Architecture (Q-HQGLS):</span> Synergizes Quantum-Behaved Particle Swarm wavefunctions <span class="math-code">|Ψ|²</span> with Guided Local Search (GLS) augmented by dynamic 2-opt* topological edge exchange.
+          </li>
+          <li>
+            <span class="highlight-term">Dynamic Traffic Impedance:</span> Real-world OpenStreetMap (OSM) graph embedding with Bureau of Public Roads (BPR) travel-time cost formulation: <span class="math-code">t_e = t_e^0 (1 + α(v/c)^β)</span>, penalizing bottleneck CBD corridors in real-time.
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section 2 -->
+      <div class="content-section">
+        <div class="section-title">
+          <span>•</span> How It Addresses the Problem:
+        </div>
+        <ul class="section-bullet">
+          <li>
+            <span class="highlight-term">Eradicates Gridlock Vulnerability:</span> Unlike static Euclidean solvers, actively redistributes delivery loads across multiple regional depot perimeters under fluctuating peak traffic.
+          </li>
+          <li>
+            <span class="highlight-term">Tames Combinatorial Explosion:</span> Solves 1,000+ delivery nodes in <span class="math-code">&lt; 1.2s</span> where exact MIP solvers crash due to <span class="math-code">O(n!)</span> computational catastrophe.
+          </li>
+        </ul>
+      </div>
+
+      <!-- Section 3 -->
+      <div class="content-section">
+        <div class="section-title">
+          <span>•</span> Innovation and Uniqueness of the Solution:
+        </div>
+        <ul class="section-bullet">
+          <li>
+            <span class="highlight-term">Quantum Tunneling Operator:</span> Non-local state transitions penetrate high-cost fitness ridges, preventing premature convergence in deceptive local minima that permanently trap classical GAs.
+          </li>
+          <li>
+            <span class="highlight-term">Turing Morphogenesis & Banburismus:</span> Activator-inhibitor demand clustering (PDEs) + Bayesian Deciban edge pruning eliminates up to 34% of combinatorial search paths in &lt; 10 ms.
+          </li>
+          <li>
+            <span class="highlight-term">Statistically Certified Optimality:</span> 95% CI <span class="math-code">[+0.43%, +2.10%]</span> matching Google OR-Tools quality with up to <span class="highlight-term">8.6× faster</span> execution across N=30 Monte Carlo trials.
+          </li>
+        </ul>
+      </div>
+
+      <!-- 4 KPI Badges -->
+      <div class="kpi-grid">
+        <div class="kpi-pill">
+          <span class="kpi-val blue">8.6× Speedup</span>
+          <span class="kpi-label">vs Google OR-Tools</span>
+        </div>
+        <div class="kpi-pill">
+          <span class="kpi-val green">[+0.4%, +2.1%]</span>
+          <span class="kpi-label">95% CI Proximity Gap</span>
+        </div>
+        <div class="kpi-pill">
+          <span class="kpi-val navy">-24.55% Cost</span>
+          <span class="kpi-label">Peak Congestion Trim</span>
+        </div>
+        <div class="kpi-pill">
+          <span class="kpi-val purple">&lt; 1.2s Latency</span>
+          <span class="kpi-label">At 1,000+ Nodes</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: VISUAL BENCHMARKS -->
+    <div class="right-col">
+      
+      <!-- Graph Card 1 -->
+      <div class="graph-card">
+        <div class="graph-header">
+          <span class="graph-title">EMPIRICAL VALIDATION: Statistical Rigour Certificate (N=30 vs Google OR-Tools)</span>
+          <span class="graph-badge">Certified 95% CI</span>
+        </div>
+        <div class="graph-img-container">
+          <img src="statistical_rigour/statistical_proximity_certificate.png" alt="Statistical Proximity Certificate">
+        </div>
+      </div>
+
+      <!-- Graph Card 2 -->
+      <div class="graph-card">
+        <div class="graph-header">
+          <span class="graph-title">REAL-WORLD DEPLOYMENT: Multi-Depot Congestion Routing (Bengaluru OSM)</span>
+          <span class="graph-badge">Live BPR Model</span>
+        </div>
+        <div class="graph-img-container">
+          <img src="national_benchmark/multidepot_congestion/bengaluru/bengaluru_multidepot_congestion_100_cust_routes.png" alt="Bengaluru Multi-Depot Congestion Routes">
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- SLIDE FOOTER -->
+  <div class="slide-footer">
+    <span class="footer-template-text">@SIH Idea submission- Template</span>
+    <span class="footer-page-num">2</span>
+  </div>
+
+</div>
+
+</body>
+</html>

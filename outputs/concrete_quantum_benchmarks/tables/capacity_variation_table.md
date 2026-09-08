@@ -1,0 +1,7 @@
+# Variation E: Vehicle Capacity Constraint Stress Benchmark
+
+|   capacity | profile                                   |   hq_dist_km |   exact_dist_km |   ga_dist_km |   hq_violations |   ga_violations |   savings_vs_ga_pct |
+|-----------:|:------------------------------------------|-------------:|----------------:|-------------:|----------------:|----------------:|--------------------:|
+|         50 | Slack Capacity (Cap = 50, Util ~55%)      |       101.78 |          102.84 |       119.98 |               0 |               0 |               15.17 |
+|         35 | Standard Normal (Cap = 35, Util ~78%)     |       106.91 |          107.94 |       137.53 |               0 |               0 |               22.26 |
+|         22 | Severe Tight Stress (Cap = 22, Util ~96%) |       117.81 |          121.6  |       133.4  |               0 |               0 |               11.69 |

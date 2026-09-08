@@ -83,29 +83,85 @@ def load_or_download_graph(city_key=None, lat=None, lon=None, radius_km=5.0):
     raise ValueError("Must provide either city_key or (lat, lon)")
 
 
-def build_dijkstra_matrices(G, sample_nodes):
-    """Build time and distance Dijkstra matrices for a subset of graph nodes."""
+def build_dijkstra_matrices(G, sample_nodes, traffic_congestion=False, cbd_coords=None, return_all=False):
+    """
+    Build time and distance Dijkstra matrices for a subset of graph nodes.
+    Supports Bureau of Public Roads (BPR) Urban Traffic Congestion Model:
+      - Functional road hierarchy free-flow velocities (motorway: 55 km/h, primary: 42 km/h, etc.)
+      - CBD radial density exponential congestion decay: k_cong = k_base + 0.5 * exp(-d_cbd / 6km)
+      - Minimum urban crawling velocity bound: 8.0 km/h
+    """
     node_list = list(G.nodes)
     node_to_idx = {n: i for i, n in enumerate(node_list)}
     N = len(node_list)
 
-    rows, cols, times, lengths = [], [], [], []
+    rows, cols = [], []
+    times_cong, times_free, lengths = [], [], []
+
+    has_cbd = (cbd_coords is not None and len(cbd_coords) == 2)
+    cbd_lat, cbd_lon = cbd_coords if has_cbd else (0.0, 0.0)
+
     for u, v, k, data in G.edges(keys=True, data=True):
         if u not in node_to_idx or v not in node_to_idx:
             continue
         rows.append(node_to_idx[u])
         cols.append(node_to_idx[v])
         l_m = float(data.get("length", 10.0))
-        speed_mps = 30.0 * (1000.0 / 3600.0)
-        times.append(l_m / speed_mps)
         lengths.append(l_m)
 
-    time_adj = sp.csr_matrix((times, (rows, cols)), shape=(N, N), dtype=np.float32)
+        # Determine road hierarchy free-flow speed
+        hway = data.get("highway", "residential")
+        if isinstance(hway, list):
+            hway = hway[0] if hway else "residential"
+
+        if hway in ["motorway", "motorway_link", "trunk", "trunk_link"]:
+            v_free = 55.0
+            k_base = 1.8
+        elif hway in ["primary", "primary_link"]:
+            v_free = 42.0
+            k_base = 2.4   # heavy arterial stop-and-go
+        elif hway in ["secondary", "secondary_link"]:
+            v_free = 32.0
+            k_base = 1.6
+        elif hway in ["tertiary", "tertiary_link"]:
+            v_free = 25.0
+            k_base = 1.3
+        else:
+            v_free = 20.0
+            k_base = 1.15
+
+        if traffic_congestion:
+            # Distance to CBD gradient
+            if has_cbd:
+                u_lat = G.nodes[u].get('y', 0.0)
+                u_lon = G.nodes[u].get('x', 0.0)
+                d_cbd_km = math.sqrt((u_lat - cbd_lat)**2 + (u_lon - cbd_lon)**2) * 111.0
+                cbd_boost = 0.5 * math.exp(-d_cbd_km / 6.0)
+            else:
+                cbd_boost = 0.2
+            k_cong = k_base + cbd_boost
+            v_cong = max(v_free / k_cong, 8.0)  # min 8 km/h crawling speed
+        else:
+            v_cong = v_free
+
+        t_free = l_m / max(v_free * (1000.0 / 3600.0), 0.5)
+        t_cong = l_m / max(v_cong * (1000.0 / 3600.0), 0.5)
+
+        times_cong.append(t_cong)
+        times_free.append(t_free)
+
+    time_adj = sp.csr_matrix((times_cong, (rows, cols)), shape=(N, N), dtype=np.float32)
     len_adj = sp.csr_matrix((lengths, (rows, cols)), shape=(N, N), dtype=np.float32)
 
     sample_indices = np.array([node_to_idx[n] for n in sample_nodes], dtype=np.int32)
     d_time = csg.dijkstra(time_adj, directed=True, indices=sample_indices)[:, sample_indices].astype(np.float32)
     d_len = csg.dijkstra(len_adj, directed=True, indices=sample_indices)[:, sample_indices].astype(np.float32)
+
+    if return_all:
+        time_free_adj = sp.csr_matrix((times_free, (rows, cols)), shape=(N, N), dtype=np.float32)
+        d_time_free = csg.dijkstra(time_free_adj, directed=True, indices=sample_indices)[:, sample_indices].astype(np.float32)
+        d_delay = np.maximum(d_time - d_time_free, 0.0).astype(np.float32)
+        return d_time, d_len, d_time_free, d_delay
 
     return d_time, d_len
 
@@ -454,7 +510,7 @@ class ExactSolver:
         sp = pywrapcp.DefaultRoutingSearchParameters()
         sp.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
         sp.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
-        sp.time_limit.seconds = self.tl
+        sp.time_limit.seconds = max(1, int(round(self.tl)))
 
         sol = routing.SolveWithParameters(sp)
         runtime = time.time() - t0

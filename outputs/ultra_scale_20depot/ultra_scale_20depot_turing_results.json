@@ -1,0 +1,13 @@
+{
+  "depots": 20,
+  "customers": 500,
+  "vehicles": 45,
+  "total_turing_dist_km": 1235.84,
+  "total_std_hq_dist_km": 1138.31,
+  "total_exact_dist_km": 1116.22,
+  "gap_vs_exact_pct": 10.72,
+  "distance_improvement_pct": -8.57,
+  "total_turing_time_s": 3.27,
+  "banburismus_prune_pct": 2.1,
+  "mean_turing_score": 74.5
+}

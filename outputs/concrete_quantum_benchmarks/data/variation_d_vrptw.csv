@@ -1,0 +1,4 @@
+window_span_min,profile,hq_dist_km,ga_dist_km,hq_sla_pct,ga_sla_pct,sla_gain_pct
+120,Flexible Windows (120 min span),125.14,147.34,60.0,62.5,-2.5
+60,Standard Delivery (60 min span),125.14,147.34,32.5,30.0,2.5
+30,Express Hyperlocal (30 min span),125.14,143.73,25.0,20.0,5.0

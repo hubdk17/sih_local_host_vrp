@@ -1,0 +1,19 @@
+{
+  "depots": 50,
+  "customers": 1000,
+  "vehicles": 90,
+  "capacity": 35,
+  "total_turing_dist_km": 1769.61,
+  "total_hq_dist_km": 1550.81,
+  "total_exact_dist_km": 1514.18,
+  "total_qpso_dist_km": 1975.86,
+  "total_ga_dist_km": 1875.78,
+  "gap_hq_pct": 2.42,
+  "gap_turing_pct": 16.87,
+  "total_turing_time_s": 3.99,
+  "total_hq_time_s": 22.3,
+  "total_exact_time_s": 46.11,
+  "speedup_hq": 2.07,
+  "speedup_turing": 11.56,
+  "total_wall_clock_s": 81.75
+}

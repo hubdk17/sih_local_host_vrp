@@ -73,6 +73,23 @@ def index():
     return send_from_directory("web", "index.html")
 
 
+@app.route("/report")
+@app.route("/math-report")
+def math_report():
+    return send_from_directory("outputs", "Quantum_HQGLS_Mathematical_Foundations_Report.html")
+
+
+@app.route("/api/proximity-certificate")
+def proximity_certificate():
+    """Return the formal statistical proximity & optimality certificate."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    cert_path = os.path.join(base_dir, "outputs", "statistical_rigour", "statistical_proximity_certificate.json")
+    if os.path.exists(cert_path):
+        with open(cert_path, "r", encoding="utf-8") as f:
+            return jsonify(json.load(f))
+    return jsonify({"error": "Statistical proximity certificate not yet generated"}), 404
+
+
 @app.route("/api/cities")
 def get_cities():
     """Return list of pre-cached cities with availability status."""
@@ -116,24 +133,28 @@ def _run_solve(job_id, data):
         capacity = int(data.get("capacity", 40))
         algorithms = data.get("algorithms", ["hq_gls", "qpso", "ga", "exact"])
         seed = int(data.get("seed", 42))
+        traffic_mode = bool(data.get("traffic_mode", False))
 
         # Limit exact solver to 100 customers (OR-Tools Guided Local Search with 15s limit)
         exact_cust_limit = 100
 
         # 1. Load Graph
         jobs[job_id]["progress"] = "Loading road network..."
+        cbd_coords = None
         if city_key and city_key in CITY_GRAPHS:
             G = load_or_download_graph(city_key=city_key)
-            if depot_lat is None:
-                meta = next((c for c in CITIES_META if c["key"] == city_key), None)
-                if meta:
-                    depot_lat, depot_lon = meta["lat"], meta["lon"]
+            meta = next((c for c in CITIES_META if c["key"] == city_key), None)
+            if meta:
+                cbd_coords = (meta["lat"], meta["lon"])
+            if depot_lat is None and meta:
+                depot_lat, depot_lon = meta["lat"], meta["lon"]
         else:
             if depot_lat is None or depot_lon is None:
                 jobs[job_id] = {"status": "error", "progress": "No location specified", "results": None}
                 return
             jobs[job_id]["progress"] = "Downloading road network from OpenStreetMap..."
             G = load_or_download_graph(lat=depot_lat, lon=depot_lon, radius_km=4.0)
+            cbd_coords = (depot_lat, depot_lon)
 
         # 2. Sample Depots & Customers
         jobs[job_id]["progress"] = "Configuring depots and customer locations..."
@@ -182,6 +203,7 @@ def _run_solve(job_id, data):
                 "num_vehicles": num_vehicles,
                 "num_customers": num_customers,
                 "capacity": capacity,
+                "traffic_congestion": traffic_mode,
                 "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
             },
             "algorithms": {}
@@ -224,21 +246,25 @@ def _run_solve(job_id, data):
                     else:
                         break
 
-        # 4. Precompute Dijkstra matrices for each depot cluster
-        jobs[job_id]["progress"] = "Computing Dijkstra shortest path matrices..."
+        # 4. Precompute Dijkstra matrices for each depot cluster (with BPR Congestion Model)
+        jobs[job_id]["progress"] = "Computing congestion-aware shortest path matrices..."
         depot_matrices = {}
         for d in range(num_depots):
             c_indices = cust_clusters[d]
             if not c_indices:
                 continue
             sub_nodes = [depot_nodes[d]] + [cust_nodes[i] for i in c_indices]
-            d_time_d, d_len_d = build_dijkstra_matrices(G, sub_nodes)
-            depot_matrices[d] = (d_time_d, d_len_d, c_indices)
+            d_time_d, d_len_d, d_time_free_d, d_delay_d = build_dijkstra_matrices(
+                G, sub_nodes, traffic_congestion=traffic_mode, cbd_coords=cbd_coords, return_all=True
+            )
+            depot_matrices[d] = (d_time_d, d_len_d, d_time_free_d, d_delay_d, c_indices)
 
         # Helper to execute any solver on the partitioned clusters
         def _solve_algorithm(algo_name):
             total_dist_m = 0.0
             total_time_s = 0.0
+            total_free_time_s = 0.0
+            total_delay_s = 0.0
             total_runtime = 0.0
             combined_routes = []
             combined_depot_ids = []
@@ -249,7 +275,7 @@ def _run_solve(job_id, data):
             for d in range(num_depots):
                 if d not in depot_matrices:
                     continue
-                d_time_d, d_len_d, c_indices = depot_matrices[d]
+                d_time_d, d_len_d, d_time_free_d, d_delay_d, c_indices = depot_matrices[d]
                 sub_demands = [demands[i] for i in c_indices]
                 sub_cust_coords = [cust_coords[i] for i in c_indices]
                 v_d = vehs_per_depot[d]
@@ -289,9 +315,20 @@ def _run_solve(job_id, data):
                         r_nodes = [0] + [c + 1 for c in local_r] + [0]
                         r_d = float(sum(d_len_d[r_nodes[k], r_nodes[k+1]] for k in range(len(r_nodes)-1)))
                         r_t = float(sum(d_time_d[r_nodes[k], r_nodes[k+1]] for k in range(len(r_nodes)-1)))
+                        r_t_free = float(sum(d_time_free_d[r_nodes[k], r_nodes[k+1]] for k in range(len(r_nodes)-1)))
+                        r_delay = max(0.0, r_t - r_t_free)
+
                         total_dist_m += r_d
                         total_time_s += r_t
+                        total_free_time_s += r_t_free
+                        total_delay_s += r_delay
                         r_load = sum(sub_demands[c] for c in local_r)
+
+                        r_dist_km = round(r_d / 1000.0, 2)
+                        r_time_min = round(r_t / 60.0, 1)
+                        r_delay_min = round(r_delay / 60.0, 1)
+                        r_speed = round(r_dist_km / max(r_t / 3600.0, 0.001), 1)
+
                         combined_route_metrics.append({
                             "vehicle_id": len(combined_routes),
                             "depot_id": d + 1,
@@ -300,12 +337,28 @@ def _run_solve(job_id, data):
                             "load": r_load,
                             "capacity": capacity,
                             "utilization_pct": round((r_load / capacity) * 100.0, 1) if capacity > 0 else 0.0,
-                            "distance_km": round(r_d / 1000.0, 2),
-                            "time_min": round(r_t / 60.0, 1),
+                            "distance_km": r_dist_km,
+                            "time_min": r_time_min,
+                            "delay_min": r_delay_min,
+                            "avg_speed_kph": r_speed,
                             "sequence": [int(c + 1) for c in global_r]
                         })
 
             route_coords = _routes_to_coords_multi(combined_routes, combined_depot_ids, depots_coords, cust_coords)
+
+            total_dist_km = round(total_dist_m / 1000.0, 2)
+            total_time_min = round(total_time_s / 60.0, 1)
+            total_delay_min = round(total_delay_s / 60.0, 1)
+            total_hours = total_time_s / 3600.0
+            delay_hours = total_delay_s / 3600.0
+            avg_speed_kph = round(total_dist_km / max(total_hours, 0.001), 1)
+
+            # Enterprise Cost formulation (INR):
+            # Fuel = ₹15/km, Driver = ₹180/hr, Idle gridlock = ₹100/hr
+            fuel_cost = total_dist_km * 15.0
+            driver_cost = total_hours * 180.0
+            delay_cost = delay_hours * 100.0
+            enterprise_cost = round(fuel_cost + driver_cost + delay_cost, 0)
 
             return {
                 "algorithm": {
@@ -314,8 +367,14 @@ def _run_solve(job_id, data):
                     "ga": "Classical GA Baseline",
                     "exact": "Exact Solver (OR-Tools)"
                 }.get(algo_name, algo_name),
-                "distance_km": round(total_dist_m / 1000.0, 2),
+                "distance_km": total_dist_km,
                 "time_sec": round(total_time_s, 2),
+                "time_min": total_time_min,
+                "free_flow_time_min": round(total_free_time_s / 60.0, 1),
+                "delay_min": total_delay_min,
+                "avg_speed_kph": avg_speed_kph,
+                "enterprise_cost": enterprise_cost,
+                "traffic_congestion": traffic_mode,
                 "runtime_sec": round(total_runtime, 3),
                 "routes": combined_routes,
                 "depot_ids": combined_depot_ids,
