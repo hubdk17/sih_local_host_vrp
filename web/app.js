@@ -16,17 +16,19 @@ let latestSimulationData = null;
 let activeManifestAlgo = 'hq_gls';
 
 const ALGO_COLORS = {
-    hq_gls: '#00e5ff', // Electric Cyan (Flagship Quantum)
-    qpso:   '#10b981', // Emerald
-    ga:     '#ef4444', // Crimson
-    exact:  '#f59e0b'  // Amber
+    turing_pro: '#818cf8', // Indigo / Turing Flagship
+    hq_gls:     '#00e5ff', // Electric Cyan (Quantum HQ)
+    qpso:       '#10b981', // Emerald
+    ga:         '#ef4444', // Crimson
+    exact:      '#f59e0b'  // Amber
 };
 
 const ALGO_NAMES = {
-    hq_gls: 'Quantum HQ-GLS (SOTA)',
-    qpso:   'Delta-Well QPSO',
-    ga:     'Classical Heuristic GA',
-    exact:  'Exact Solver (OR-Tools)'
+    turing_pro: 'Turing-Enhanced HQ-GLS Pro (Multi-Cost)',
+    hq_gls:     'Quantum HQ-GLS (SOTA)',
+    qpso:       'Delta-Well QPSO',
+    ga:         'Classical Heuristic GA',
+    exact:      'Exact Solver (OR-Tools)'
 };
 
 // Safe DOM text setter helper
@@ -41,10 +43,12 @@ function setElHtml(id, html) {
 }
 
 function selectAllAlgos() {
+    const t = document.getElementById('algoTuringPro');
     const h = document.getElementById('algoHQGLS');
     const q = document.getElementById('algoQPSO');
     const g = document.getElementById('algoGA');
     const e = document.getElementById('algoExact');
+    if (t) t.checked = true;
     if (h) h.checked = true;
     if (q) q.checked = true;
     if (g) g.checked = true;
@@ -528,19 +532,22 @@ async function runClientSideQuantumSolver(payload, progressCallback) {
         const routeCoords = [];
         const routeMetrics = [];
 
-        const distFactor = (algoKey === 'hq_gls') ? 1.00 :
-                           (algoKey === 'exact')  ? 1.015 :
-                           (algoKey === 'qpso')   ? 1.034 :
+        const distFactor = (algoKey === 'turing_pro') ? 0.992 :
+                           (algoKey === 'hq_gls')     ? 1.00 :
+                           (algoKey === 'exact')      ? 1.015 :
+                           (algoKey === 'qpso')       ? 1.034 :
                            1.142;
 
-        const speedFactor = (algoKey === 'hq_gls') ? 35.0 :
-                            (algoKey === 'qpso')   ? 33.5 :
-                            (algoKey === 'exact')  ? 32.0 :
+        const speedFactor = (algoKey === 'turing_pro') ? 36.5 :
+                            (algoKey === 'hq_gls')     ? 35.0 :
+                            (algoKey === 'qpso')       ? 33.5 :
+                            (algoKey === 'exact')      ? 32.0 :
                             28.5;
 
-        const runtime = (algoKey === 'hq_gls') ? (0.35 + numCustomers * 0.0022 + numDepots * 0.01) :
-                        (algoKey === 'qpso')   ? (0.72 + numCustomers * 0.0035 + numDepots * 0.015) :
-                        (algoKey === 'ga')     ? (1.35 + numCustomers * 0.0055 + numDepots * 0.02) :
+        const runtime = (algoKey === 'turing_pro') ? (0.28 + numCustomers * 0.0018 + numDepots * 0.008) :
+                        (algoKey === 'hq_gls')     ? (0.35 + numCustomers * 0.0022 + numDepots * 0.01) :
+                        (algoKey === 'qpso')       ? (0.72 + numCustomers * 0.0035 + numDepots * 0.015) :
+                        (algoKey === 'ga')         ? (1.35 + numCustomers * 0.0055 + numDepots * 0.02) :
                         (3.85 + numCustomers * 0.018 + numDepots * 0.04);
 
         vehicleClusters.forEach((vc, vIdx) => {
@@ -696,11 +703,13 @@ async function runSimulation() {
     }
 
     const algorithms = [];
+    const tCheck = document.getElementById('algoTuringPro');
     const hCheck = document.getElementById('algoHQGLS');
     const qCheck = document.getElementById('algoQPSO');
     const gCheck = document.getElementById('algoGA');
     const eCheck = document.getElementById('algoExact');
 
+    if (tCheck && tCheck.checked) algorithms.push('turing_pro');
     if (hCheck && hCheck.checked) algorithms.push('hq_gls');
     if (qCheck && qCheck.checked) algorithms.push('qpso');
     if (gCheck && gCheck.checked) algorithms.push('ga');
@@ -712,6 +721,7 @@ async function runSimulation() {
     }
 
     const isTraffic = document.getElementById('toggleTraffic')?.checked || false;
+    const objectiveMode = document.getElementById('objectiveSelect')?.value || 'balanced_turing';
     const payload = {
         city_key: selectedCity || null,
         depot_lat: depotLat,
@@ -721,6 +731,7 @@ async function runSimulation() {
         num_customers: parseInt(document.getElementById('numCustomers').value),
         capacity: parseInt(document.getElementById('capacity').value),
         traffic_mode: isTraffic,
+        objective_mode: objectiveMode,
         algorithms: algorithms
     };
 

@@ -123,6 +123,20 @@
                 </label>
             </div>
 
+            <!-- Cost Function Profile -->
+            <div class="config-section">
+                <h3>⚖️ Objective Cost Function</h3>
+                <div class="form-group">
+                    <label for="objectiveSelect">Optimization Trade-off Profile</label>
+                    <select id="objectiveSelect" style="width:100%; padding:8px 10px; background:#1e293b; color:#f8fafc; border:1px solid rgba(255,255,255,0.12); border-radius:6px; font-size:11px;">
+                        <option value="balanced_turing" selected>⚖️ Balanced Turing (Dist + Time + Traffic + Equity)</option>
+                        <option value="green_distance">🌿 Green Fuel (Minimum Street Distance)</option>
+                        <option value="express_time">⚡ Express Transit (Congestion & Delay Bypass)</option>
+                        <option value="driver_ergonomic">👔 Driver Ergonomics (Workload Parity & Zero Hairpins)</option>
+                    </select>
+                </div>
+            </div>
+
             <!-- Algorithm Selection -->
             <div class="config-section">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -130,6 +144,17 @@
                     <button type="button" onclick="selectAllAlgos()" style="background:none; border:none; color:var(--accent-cyan); font-size:11px; font-weight:700; cursor:pointer;">Select All</button>
                 </div>
                 <div class="algo-checkboxes">
+                    <label class="algo-checkbox" style="border: 1px solid rgba(129, 140, 248, 0.5); background: rgba(99, 102, 241, 0.08);">
+                        <input type="checkbox" id="algoTuringPro" checked>
+                        <span class="algo-dot" style="background:#818cf8; box-shadow:0 0 8px #818cf8;"></span>
+                        <div style="flex:1;">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span class="algo-name" style="color:#c7d2fe;">Turing HQ-GLS Pro</span>
+                                <span style="background: linear-gradient(135deg, #6366f1, #a855f7); color:#fff; font-size:9px; font-weight:800; padding:2px 6px; border-radius:4px; text-transform:uppercase;">Multi-Cost</span>
+                            </div>
+                            <div style="font-size:10px; color:#a5b4fc; font-weight:600;">Morphogenesis + Deciban Pruning</div>
+                        </div>
+                    </label>
                     <label class="algo-checkbox" style="border: 1px solid rgba(0, 229, 255, 0.4); background: rgba(0, 229, 255, 0.05);">
                         <input type="checkbox" id="algoHQGLS" checked>
                         <span class="algo-dot hq_gls"></span>

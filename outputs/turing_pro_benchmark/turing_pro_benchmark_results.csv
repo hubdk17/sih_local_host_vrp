@@ -1,0 +1,6 @@
+algo_key,name,distance_km,time_min,delay_min,equity_std_min,ltt_score,crossings,pruning_pct,runtime_s
+ga,Classical GA Baseline,358.0,1087.2,465.0,163.17,33.4,12,0.0,0.31
+qpso,Delta-Well QPSO,319.31,977.9,418.7,129.85,53.0,5,0.0,0.41
+exact,Exact Solver (OR-Tools),299.34,929.9,393.5,112.39,44.6,8,0.0,15.05
+hq_gls,Standard Quantum HQ-GLS,299.1,933.4,396.0,112.82,58.6,3,0.0,3.5
+turing_pro,Turing-Enhanced HQ-GLS Pro,301.08,932.0,399.0,113.52,56.9,5,0.0,2.96

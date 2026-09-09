@@ -24,6 +24,8 @@ import scipy.sparse.csgraph as csg
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "data", "cities")
 
+from src.turing_quantum_hqgls_pro import TuringQuantumHQGLSPro
+
 
 def _sanitize(obj):
     """Recursively convert numpy types to native Python types for JSON serialization."""

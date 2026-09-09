@@ -1,0 +1,62 @@
+[
+  {
+    "algo_key": "ga",
+    "name": "Classical GA Baseline",
+    "distance_km": 358.0,
+    "time_min": 1087.2,
+    "delay_min": 465.0,
+    "equity_std_min": 163.17,
+    "ltt_score": 33.4,
+    "crossings": 12,
+    "pruning_pct": 0.0,
+    "runtime_s": 0.31
+  },
+  {
+    "algo_key": "qpso",
+    "name": "Delta-Well QPSO",
+    "distance_km": 319.31,
+    "time_min": 977.9,
+    "delay_min": 418.7,
+    "equity_std_min": 129.85,
+    "ltt_score": 53.0,
+    "crossings": 5,
+    "pruning_pct": 0.0,
+    "runtime_s": 0.41
+  },
+  {
+    "algo_key": "exact",
+    "name": "Exact Solver (OR-Tools)",
+    "distance_km": 299.34,
+    "time_min": 929.9,
+    "delay_min": 393.5,
+    "equity_std_min": 112.39,
+    "ltt_score": 44.6,
+    "crossings": 8,
+    "pruning_pct": 0.0,
+    "runtime_s": 15.05
+  },
+  {
+    "algo_key": "hq_gls",
+    "name": "Standard Quantum HQ-GLS",
+    "distance_km": 299.1,
+    "time_min": 933.4,
+    "delay_min": 396.0,
+    "equity_std_min": 112.82,
+    "ltt_score": 58.6,
+    "crossings": 3,
+    "pruning_pct": 0.0,
+    "runtime_s": 3.5
+  },
+  {
+    "algo_key": "turing_pro",
+    "name": "Turing-Enhanced HQ-GLS Pro",
+    "distance_km": 301.08,
+    "time_min": 932.0,
+    "delay_min": 399.0,
+    "equity_std_min": 113.52,
+    "ltt_score": 56.9,
+    "crossings": 5,
+    "pruning_pct": 0.0,
+    "runtime_s": 2.96
+  }
+]

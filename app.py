@@ -21,7 +21,8 @@ from flask_cors import CORS
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 from solver_engine import (
     load_or_download_graph, build_dijkstra_matrices,
-    DeltaWellQPSO, ClassicalGABaseline, ExactSolver, HQGLSSolver, CITY_GRAPHS
+    DeltaWellQPSO, ClassicalGABaseline, ExactSolver, HQGLSSolver,
+    TuringQuantumHQGLSPro, CITY_GRAPHS
 )
 import osmnx as ox
 
@@ -134,6 +135,7 @@ def _run_solve(job_id, data):
         algorithms = data.get("algorithms", ["hq_gls", "qpso", "ga", "exact"])
         seed = int(data.get("seed", 42))
         traffic_mode = bool(data.get("traffic_mode", False))
+        objective_mode = data.get("objective_mode", "balanced_turing")
 
         # Limit exact solver to 100 customers (OR-Tools Guided Local Search with 15s limit)
         exact_cust_limit = 100
@@ -280,7 +282,14 @@ def _run_solve(job_id, data):
                 sub_cust_coords = [cust_coords[i] for i in c_indices]
                 v_d = vehs_per_depot[d]
 
-                if algo_name == "hq_gls":
+                if algo_name in ["turing_pro", "quantum_turing"]:
+                    solver = TuringQuantumHQGLSPro(
+                        d_time_d, d_len_d, sub_demands, v_d, capacity,
+                        depots_coords[d], sub_cust_coords,
+                        delay_matrix=d_delay_d, free_time_matrix=d_time_free_d,
+                        time_limit=max(2.0, 4.0 / num_depots), objective_mode=objective_mode
+                    )
+                elif algo_name == "hq_gls":
                     solver = HQGLSSolver(d_time_d, d_len_d, sub_demands, v_d, capacity,
                                          depots_coords[d], sub_cust_coords, time_limit=max(1.5, 3.0 / num_depots))
                 elif algo_name == "qpso":
@@ -362,6 +371,7 @@ def _run_solve(job_id, data):
 
             return {
                 "algorithm": {
+                    "turing_pro": "Turing-Enhanced HQ-GLS Pro (Multi-Cost)",
                     "hq_gls": "Quantum HQ-GLS (SOTA)",
                     "qpso": "Delta-Well QPSO",
                     "ga": "Classical GA Baseline",
@@ -385,6 +395,10 @@ def _run_solve(job_id, data):
             }
 
         # 5. Run Selected Algorithms
+        if "turing_pro" in algorithms:
+            jobs[job_id]["progress"] = "Running Turing-Enhanced HQ-GLS Pro (Morphogenesis + Deciban)..."
+            response["algorithms"]["turing_pro"] = _solve_algorithm("turing_pro")
+
         if "hq_gls" in algorithms:
             jobs[job_id]["progress"] = "Running Quantum HQ-GLS (Quantum Tunneling + ALNS)..."
             response["algorithms"]["hq_gls"] = _solve_algorithm("hq_gls")
