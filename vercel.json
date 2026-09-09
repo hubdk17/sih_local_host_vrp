@@ -2,6 +2,10 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "outputDirectory": "web",
+  "rewrites": [
+    { "source": "/api/cities", "destination": "/api/cities.json" },
+    { "source": "/api/proximity-certificate", "destination": "/api/proximity-certificate.json" }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",

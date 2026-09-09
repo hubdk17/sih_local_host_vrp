@@ -1,0 +1,32 @@
+{
+  "benchmark_date": "2026-09-07 22:26:47",
+  "city": "Delhi (NCT)",
+  "total_trials": 30,
+  "sample_sizes_tested": [30, 40, 50],
+  "metrics": {
+    "mean_gap_pct": 1.263,
+    "std_gap_pct": 2.242,
+    "standard_error_pct": 0.409,
+    "ci_95_range_pct": [0.426, 2.1],
+    "ci_99_range_pct": [0.134, 2.391],
+    "win_rate_beats_exact_pct": 20.0,
+    "win_or_match_rate_pct": 23.3,
+    "within_1pct_proximity_rate": 50.0,
+    "within_2pct_proximity_rate": 76.7,
+    "mean_speedup_factor": 2.27,
+    "median_speedup_factor": 2.33,
+    "paired_ttest": {
+      "t_statistic": 2.8353,
+      "p_value": 0.008257299189672914
+    },
+    "wilcoxon_signed_rank": {
+      "w_statistic": 80.0,
+      "p_value": 0.0011314544826745987
+    },
+    "chebyshev_bound": {
+      "epsilon_pct": 2.0,
+      "max_tail_probability": 1.0
+    }
+  },
+  "formal_claim": "With 95% statistical confidence across 30 randomized urban instances, HQ-GLS solutions fall within [+0.43%, +2.10%] of Google OR-Tools Guided Local Search while achieving a 2.3x mean runtime acceleration."
+}
