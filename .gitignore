@@ -20,3 +20,18 @@ cache/
 .DS_Store
 Thumbs.db
 *.log
+~$*
+
+# Presentation Slides & PowerPoint (Kept strictly local)
+*.pptx
+*.ppt
+outputs/SIH_*
+outputs/*slide*
+outputs/*Slide*
+outputs/*snippet*
+outputs/bloch_sphere_vector.png
+outputs/road_graph_vector.png
+
+# Local scratch testing scripts
+scratch/
+
