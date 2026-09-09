@@ -428,7 +428,7 @@ def generate_technical_approach_slide():
 
     # Left Column: Card 1 (Algorithmic Core)
     add_card(slide, 0.4, 1.45, 5.6, 2.15, (248, 250, 252), (226, 232, 240))
-    tb_c1 = slide.shapes.add_textbox(Inches(0.5), Inches(1.5), Inches(5.4), Inches(2.0))
+    tb_c1 = slide.shapes.add_textbox(Inches(0.5), Inches(1.5), Inches(4.1), Inches(2.0))
     tf1 = tb_c1.text_frame
     p = tf1.paragraphs[0]
     p.text = "[CORE ENGINE]  Python 3.11 Vectorized Algorithmic Core"
@@ -448,9 +448,12 @@ def generate_technical_approach_slide():
         pb.font.size = Pt(9.5)
         pb.font.color.rgb = RGBColor(15, 23, 42)
 
+    if os.path.exists(bloch_p):
+        slide.shapes.add_picture(bloch_p, Inches(4.65), Inches(1.75), width=Inches(1.25))
+
     # Left Column: Card 2 (Spatial GIS Engine)
     add_card(slide, 0.4, 3.70, 5.6, 2.15, (248, 250, 252), (226, 232, 240))
-    tb_c2 = slide.shapes.add_textbox(Inches(0.5), Inches(3.75), Inches(5.4), Inches(2.0))
+    tb_c2 = slide.shapes.add_textbox(Inches(0.5), Inches(3.75), Inches(3.9), Inches(2.0))
     tf2 = tb_c2.text_frame
     p = tf2.paragraphs[0]
     p.text = "[SPATIAL GIS]  OpenStreetMap & BPR Dynamic Congestion Engine"
@@ -469,6 +472,11 @@ def generate_technical_approach_slide():
         pb.text = b
         pb.font.size = Pt(9.5)
         pb.font.color.rgb = RGBColor(15, 23, 42)
+
+    if os.path.exists(road_p):
+        slide.shapes.add_picture(road_p, Inches(4.45), Inches(4.35), width=Inches(0.72))
+    if os.path.exists(hud_p):
+        slide.shapes.add_picture(hud_p, Inches(5.20), Inches(4.35), width=Inches(0.72))
 
     # Right Column: 4 Stages
     stage_w = 6.7
@@ -529,9 +537,16 @@ def generate_technical_approach_slide():
     p_foot.font.size = Pt(10)
     p_foot.font.color.rgb = RGBColor(255, 255, 255)
 
-    pptx_out = os.path.join(OUTPUT_DIR, "SIH_2026_Technical_Approach_Slide.pptx")
+    pptx_out = os.path.join(OUTPUT_DIR, "SIH_2026_Technical_Approach_Google_Slides.pptx")
     prs.save(pptx_out)
-    print(f"Saved Editable PowerPoint: {pptx_out}")
+    print(f"Saved Editable PowerPoint for Google Slides: {pptx_out}")
+
+    # Also try saving/updating the original if not locked by PowerPoint
+    orig_pptx = os.path.join(OUTPUT_DIR, "SIH_2026_Technical_Approach_Slide.pptx")
+    try:
+        shutil.copy2(pptx_out, orig_pptx)
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":
