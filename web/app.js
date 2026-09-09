@@ -743,10 +743,11 @@ async function runSimulation() {
         let result = null;
         let usedClientSolver = false;
 
-        // 1. Attempt to connect to local/remote Python backend if available
+        // 1. Attempt to connect to local Python backend
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 1800);
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            if (statusText) statusText.textContent = '🐍 Connecting to Python Backend (Localhost)...';
             const resp = await fetch('/api/solve', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -760,19 +761,23 @@ async function runSimulation() {
                 const data = await resp.json();
                 if (data && data.job_id) {
                     const jobId = data.job_id;
+                    if (statusText) statusText.textContent = '🐍 Real Python Solvers Running (OR-Tools GLS & QPSO)...';
                     while (!result) {
                         await sleep(700);
                         const statusResp = await fetch(`/api/status/${jobId}`);
                         const statusCt = statusResp.headers.get('content-type') || '';
                         if (!statusResp.ok || !statusCt.includes('application/json')) {
-                            throw new Error('Lost connection to backend server');
+                            throw new Error('Lost connection to Python backend');
                         }
                         const status = await statusResp.json();
                         if (progressText) progressText.textContent = status.progress || 'Optimizing...';
+                        if (statusText && status.progress) {
+                            statusText.textContent = `🐍 Localhost Engine: ${status.progress}`;
+                        }
                         if (status.status === 'done') {
                             result = status.results;
                         } else if (status.status === 'error') {
-                            throw new Error(status.progress);
+                            throw new Error(status.progress || 'Backend optimization error');
                         }
                     }
                 } else {
@@ -782,12 +787,13 @@ async function runSimulation() {
                 usedClientSolver = true;
             }
         } catch (backendErr) {
+            console.warn('Local Python backend not reachable:', backendErr.message);
             usedClientSolver = true;
         }
 
-        // 2. Fallback to in-browser Quantum Optimization Solver Engine (for Vercel & offline static deployment)
+        // 2. Fallback to in-browser engine if Python backend is not active
         if (usedClientSolver) {
-            console.info('Backend unavailable or static cloud hosting detected. Running in-browser Quantum Optimization Solver.');
+            console.info('Python backend offline. Run "python app.py" for genuine 10-15s combinatorial computation.');
             result = await runClientSideQuantumSolver(payload, (msg) => {
                 if (progressText) progressText.textContent = msg;
             });
@@ -798,8 +804,8 @@ async function runSimulation() {
 
         if (statusText) {
             statusText.textContent = usedClientSolver
-                ? '⚡ In-Browser Quantum Simulation Engine (Static Cloud Mode)'
-                : 'Simulation Complete & Benchmarked';
+                ? '⚡ Client-Side Simulation Mode (Run "python app.py" for 10-15s Real Solvers)'
+                : '🐍 Real Python Optimization Complete (Localhost Exact & Quantum)';
         }
         if (statusDot) statusDot.classList.remove('running');
 
@@ -808,7 +814,7 @@ async function runSimulation() {
         try {
             const fallbackResult = await runClientSideQuantumSolver(payload, null);
             renderResults(fallbackResult);
-            if (statusText) statusText.textContent = '⚡ In-Browser Quantum Simulation Engine (Static Mode)';
+            if (statusText) statusText.textContent = '⚡ Client-Side Simulation Mode (Run "python app.py" for Real Solvers)';
         } catch (innerErr) {
             alert('Simulation failed: ' + innerErr.message);
             console.error('Simulation error:', innerErr);
