@@ -83,16 +83,27 @@ class TuringQuantumHQGLSPro:
         # Road hierarchy friction factor: street_dist / euclidean_dist
         self.friction = np.clip((self.d / self.d_euc) - 1.20, 0.0, 3.0)
 
+        # Non-linear BPR Volatility Delay Matrix: delay * (1 + 1.5 * delay / free_flow)
+        free_flow = np.maximum(self.t - self.delay, 1.0)
+        self.delay_volatility = self.delay * (1.0 + 1.5 * np.clip(self.delay / free_flow, 0.0, 4.0))
+
         # Configure Multi-Parametric Generalized Cost Matrix
         # Reference velocity: 10.0 m/s (~36 km/h) converts seconds to equivalent meters
         v_ref = 10.0
-        if objective_mode == "express_time":
-            w_d, w_t, w_c, w_h = 0.30, 0.50, 0.20, 0.05
-        elif objective_mode == "green_distance":
-            w_d, w_t, w_c, w_h = 0.70, 0.15, 0.10, 0.05
+        self.v_ref = v_ref
+
+        # Weight profiles across trade-offs:
+        if objective_mode in ["green_distance", "pure_distance"]:
+            w_d, w_t, w_c, w_h = 1.00, 0.00, 0.00, 0.00
+        elif objective_mode in ["express_time", "pure_time"]:
+            w_d, w_t, w_c, w_h = 0.10, 0.65, 0.25, 0.00
+        elif objective_mode == "risk_averse_traffic":
+            w_d, w_t, w_c, w_h = 0.20, 0.30, 0.45, 0.05
+        elif objective_mode == "green_kinetic":
+            w_d, w_t, w_c, w_h = 0.50, 0.20, 0.10, 0.20
         elif objective_mode == "driver_ergonomic":
-            w_d, w_t, w_c, w_h = 0.40, 0.30, 0.15, 0.15
-        else:  # balanced_turing
+            w_d, w_t, w_c, w_h = 0.35, 0.35, 0.10, 0.20
+        else:  # balanced_turing (default)
             w_d, w_t, w_c, w_h = 0.45, 0.35, 0.15, 0.05
 
         if weights:
@@ -101,11 +112,14 @@ class TuringQuantumHQGLSPro:
             w_c = weights.get("w_cong", w_c)
             w_h = weights.get("w_hway", w_h)
 
+        # Select delay matrix based on risk aversion
+        effective_delay = self.delay_volatility if objective_mode in ["risk_averse_traffic", "express_time"] else self.delay
+
         # Unified Edge Cost Matrix (in equivalent meters)
         self.C = (
             w_d * self.d
             + w_t * (self.t * v_ref)
-            + w_c * (self.delay * v_ref)
+            + w_c * (effective_delay * v_ref)
             + w_h * (self.friction * self.d)
         ).astype(np.float32)
 
@@ -121,7 +135,18 @@ class TuringQuantumHQGLSPro:
         if not r:
             return 0.0
         full = [0] + [c + 1 for c in r] + [0]
-        return sum(self.C[full[k], full[k + 1]] for k in range(len(full) - 1))
+        base = sum(self.C[full[k], full[k + 1]] for k in range(len(full) - 1))
+        if self.objective_mode == "green_kinetic":
+            # Dynamic payload-distance work (kg * m equivalent)
+            rem_load = sum(self.demands[c] for c in r)
+            work = 0.0
+            for k in range(len(full) - 1):
+                u, v = full[k], full[k + 1]
+                work += (rem_load / max(1.0, float(self.cap))) * self.d[u, v] * 0.25
+                if v > 0:
+                    rem_load -= self.demands[v - 1]
+            return base + work
+        return base
 
     def _route_dist(self, r):
         if not r:
@@ -140,6 +165,26 @@ class TuringQuantumHQGLSPro:
             return 0.0
         full = [0] + [c + 1 for c in r] + [0]
         return sum(self.delay[full[k], full[k + 1]] for k in range(len(full) - 1))
+
+    def _route_kinetic_energy(self, r):
+        """
+        Cumulative Payload-Distance Work (Energy in kg*km):
+        E = sum_{k=0}^{|r|} (m_tare + payload_remaining_k) * dist_{k, k+1}
+        m_tare assumed as 5 * capacity (relative vehicle tare mass).
+        """
+        if not r:
+            return 0.0
+        m_tare = 5.0 * self.cap
+        full = [0] + [c + 1 for c in r] + [0]
+        rem_load = sum(self.demands[c] for c in r)
+        work = 0.0
+        for k in range(len(full) - 1):
+            u, v = full[k], full[k + 1]
+            dist_km = self.d[u, v] / 1000.0
+            work += (m_tare + rem_load) * dist_km
+            if v > 0:
+                rem_load -= self.demands[v - 1]
+        return work
 
     # -------------------------------------------------------------------------
     # Intra-Route Straightening (2-Opt & Or-Opt on Unified Cost)
@@ -500,8 +545,10 @@ class TuringQuantumHQGLSPro:
         total_t = sum(self._route_time(r) for r in best_routes)
         total_delay = sum(self._route_delay(r) for r in best_routes)
 
+        total_kinetic = sum(self._route_kinetic_energy(r) for r in best_routes)
         r_times = [self._route_time(r) / 60.0 for r in best_routes if r]
         equity_std = float(np.std(r_times)) if len(r_times) > 1 else 0.0
+        makespan = float(np.max(r_times)) if r_times else 0.0
 
         # Evaluate Logistic Turing Test
         ltt = self._evaluate_ltt(best_routes, total_delay, equity_std)
@@ -519,7 +566,9 @@ class TuringQuantumHQGLSPro:
             "time_sec": round(float(total_t), 1),
             "time_min": round(float(total_t) / 60.0, 1),
             "delay_min": round(float(total_delay) / 60.0, 1),
+            "makespan_min": round(makespan, 1),
             "equity_std_min": round(equity_std, 2),
+            "kinetic_energy_kg_km": round(float(total_kinetic), 1),
             "runtime_sec": round(runtime, 3),
             "routes": best_routes,
             "violations": int(violations),
