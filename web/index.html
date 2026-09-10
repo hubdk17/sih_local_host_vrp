@@ -20,21 +20,32 @@
         <!-- ======== SIDEBAR ======== -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h1>⚛️ Quantum VRP Platform</h1>
-                <p>Interactive Route Optimization & Benchmarking</p>
+                <div class="sidebar-brand">
+                    <div class="brand-logo-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                            <polyline points="2 17 12 22 22 17"></polyline>
+                            <polyline points="2 12 12 17 22 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="brand-info">
+                        <div class="brand-name">QUANTUM VRP <span class="edition-tag">ENTERPRISE</span></div>
+                        <div class="brand-desc">Autonomous Route Optimization Platform</div>
+                    </div>
+                </div>
             </div>
 
             <!-- City / Location Selection -->
             <div class="config-section">
-                <h3>📍 Location</h3>
+                <h3><span class="sec-icon">📍</span> Location & Topology</h3>
                 <div class="form-group">
-                    <label for="citySelect">Select City (Pre-Cached)</label>
+                    <label for="citySelect">Select City (Pre-Cached Network)</label>
                     <select id="citySelect">
                         <option value="">— Loading cities... —</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Or click on the map to place depot</label>
+                    <label>Or click map to place custom depot</label>
                     <div style="display:flex; gap:8px;">
                         <input type="number" id="depotLat" placeholder="Latitude" step="0.0001" style="flex:1">
                         <input type="number" id="depotLon" placeholder="Longitude" step="0.0001" style="flex:1">
@@ -44,11 +55,11 @@
 
             <!-- Fleet Configuration -->
             <div class="config-section">
-                <h3>🚛 Fleet Configuration</h3>
+                <h3><span class="sec-icon">🚛</span> Fleet Dispatch Parameters</h3>
                 <div class="slider-group">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <label style="margin-bottom:0;">Distribution Depots <span id="depotVal" style="color:var(--accent-cyan); font-weight:800;">1</span></label>
-                        <span style="font-size:10px; color:#64748b;">(1 to 10 Hubs)</span>
+                        <label style="margin-bottom:0;">Distribution Depots <span id="depotVal" style="color:var(--accent-hqgls); font-weight:800;">1</span></label>
+                        <span style="font-size:10px; color:var(--text-dim);">(1 to 10 Hubs)</span>
                     </div>
                     <input type="range" id="numDepots" min="1" max="10" value="1">
                     <div class="depot-presets">
@@ -77,7 +88,7 @@
                 <div class="ent-sidebar-box">
                     <div class="ent-sidebar-title">
                         <span>⚡ Mega-Scale Showcase</span>
-                        <span class="badge-pill" style="font-size:8px; padding:1px 5px;">Instant Showcase</span>
+                        <span class="badge-pill" style="font-size:8px; padding:1px 5px;">Instant Presets</span>
                     </div>
                     <div class="ent-preset-grid">
                         <button type="button" class="btn-sidebar-preset" onclick="loadEnterpriseScenario('delhi_20')">
@@ -93,7 +104,7 @@
                             <span class="sub">1.5k Cust · 4.4x Faster</span>
                         </button>
                         <button type="button" class="btn-sidebar-preset" onclick="loadEnterpriseScenario('mumbai_200')">
-                            <span style="color:#00e5ff;">Mumbai · 200 Hubs</span>
+                            <span style="color:var(--accent-hqgls);">Mumbai · 200 Hubs</span>
                             <span class="sub">2k Cust · +1.06% Gap</span>
                         </button>
                     </div>
@@ -103,16 +114,16 @@
             <!-- Real-Time Traffic & Environment -->
             <div class="config-section">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <h3 style="margin-bottom:0;">🚦 Urban Traffic & Congestion</h3>
+                    <h3 style="margin-bottom:0;"><span class="sec-icon">🚦</span> Real-World Congestion</h3>
                     <span id="trafficBadge" class="traffic-status-badge">Free-Flow</span>
                 </div>
                 <label class="traffic-toggle-card" for="toggleTraffic">
                     <div style="flex:1;">
-                        <div style="font-size:12px; font-weight:700; color:#fff; display:flex; align-items:center; gap:6px;">
+                        <div style="font-size:12px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
                             <span>Peak-Hour BPR Congestion</span>
                             <span class="badge-live-traffic">Real-World</span>
                         </div>
-                        <div style="font-size:10px; color:#94a3b8; margin-top:3px; line-height:1.4;">
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:3px; line-height:1.4;">
                             BPR road hierarchy speeds (8–55 km/h) + CBD bottleneck slowdown & idle delay costs
                         </div>
                     </div>
@@ -125,10 +136,10 @@
 
             <!-- Cost Function Profile -->
             <div class="config-section">
-                <h3>⚖️ Objective Cost Function</h3>
+                <h3><span class="sec-icon">⚖️</span> Objective Cost Function</h3>
                 <div class="form-group">
                     <label for="objectiveSelect">Optimization Trade-off Profile</label>
-                    <select id="objectiveSelect" style="width:100%; padding:8px 10px; background:#1e293b; color:#f8fafc; border:1px solid rgba(255,255,255,0.12); border-radius:6px; font-size:11px;">
+                    <select id="objectiveSelect">
                         <option value="balanced_turing" selected>⚖️ Balanced Turing (Dist + Time + Traffic + Equity)</option>
                         <option value="green_kinetic">🔋 Green Kinetic (Dynamic Payload-Distance Work)</option>
                         <option value="risk_averse_traffic">🛡️ Risk-Averse BPR (Nonlinear Bottleneck Avoidance)</option>
@@ -142,8 +153,8 @@
             <!-- Algorithm Selection -->
             <div class="config-section">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <h3 style="margin-bottom:0;">⚡ Algorithms to Compare</h3>
-                    <button type="button" onclick="selectAllAlgos()" style="background:none; border:none; color:var(--accent-cyan); font-size:11px; font-weight:700; cursor:pointer;">Select All</button>
+                    <h3 style="margin-bottom:0;"><span class="sec-icon">⚡</span> Optimization Solvers</h3>
+                    <button type="button" onclick="selectAllAlgos()" style="background:none; border:none; color:var(--accent-hqgls); font-size:11px; font-weight:700; cursor:pointer;">Select All</button>
                 </div>
                 <div class="algo-checkboxes">
                     <label class="algo-checkbox" style="border: 1px solid rgba(129, 140, 248, 0.5); background: rgba(99, 102, 241, 0.08);">
@@ -215,6 +226,8 @@
             <header class="top-nav">
                 <div class="nav-brand">
                     <span class="status-indicator live"></span>
+                    <span class="engine-tag">SOLVER ENGINE</span>
+                    <span class="status-sep">/</span>
                     <span class="status-text" id="systemStatus">Ready for Simulation</span>
                 </div>
                 <div class="view-tabs">
@@ -227,14 +240,22 @@
                     </button>
                     <button class="view-tab" id="tabEnterprise" onclick="switchView('enterprise')">
                         <span class="tab-icon">⚡</span> Mega-Scale Benchmarks
-                        <span class="tab-badge pulse" style="background:#00e5ff; color:#0f172a;">20–200 Hubs</span>
+                        <span class="tab-badge pulse" style="background:var(--accent-hqgls); color:#0f172a;">20–200 Hubs</span>
                     </button>
                     <button class="view-tab" id="tabGallery" onclick="switchView('gallery')">
                         <span class="tab-icon">🖼️</span> Research Slide Deck
-                        <span class="tab-badge" style="background:#818cf8; color:#0f172a;">White-BG</span>
+                        <span class="tab-badge" style="background:var(--accent-turing); color:#0f172a;">White-BG</span>
                     </button>
                 </div>
                 <div class="nav-actions">
+                    <div class="env-pill">
+                        <span class="env-pulse"></span>
+                        <span>LOCALHOST · v2.4</span>
+                    </div>
+                    <button class="btn-theme-toggle" id="btnThemeToggle" onclick="toggleAppTheme()" title="Switch Theme (Enterprise Dark / Cloud Light)">
+                        <span id="themeToggleIcon">🌙</span>
+                        <span id="themeToggleText">Dark</span>
+                    </button>
                     <button class="btn-nav" id="btnQuickEnterprise" onclick="switchView('enterprise')" title="View 20-200 Hub Enterprise Benchmarks">
                         ⚡ 20–200 Hubs
                     </button>

@@ -29,6 +29,7 @@ outputs/SIH_*
 outputs/*slide*
 outputs/*Slide*
 outputs/*snippet*
+outputs/*table*
 outputs/bloch_sphere_vector.png
 outputs/road_graph_vector.png
 

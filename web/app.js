@@ -5,6 +5,7 @@
 
 // ---- Global State ----
 let map = null;
+let baseTileLayer = null;
 let depotMarker = null;
 let depotMarkers = [];
 let customerMarkers = [];
@@ -17,9 +18,9 @@ let activeManifestAlgo = 'hq_gls';
 
 const ALGO_COLORS = {
     turing_pro: '#818cf8', // Indigo / Turing Flagship
-    hq_gls:     '#00e5ff', // Electric Cyan (Quantum HQ)
+    hq_gls:     '#38bdf8', // Enterprise Electric Sky
     qpso:       '#10b981', // Emerald
-    ga:         '#ef4444', // Crimson
+    ga:         '#f43f5e', // Coral/Rose
     exact:      '#f59e0b'  // Amber
 };
 
@@ -30,6 +31,53 @@ const ALGO_NAMES = {
     ga:         'Classical Heuristic GA',
     exact:      'Exact Solver (OR-Tools)'
 };
+
+// ---- Theme Management (Dual-Theme Enterprise System) ----
+function getStoredTheme() {
+    return localStorage.getItem('quantum_vrp_theme') || 'dark';
+}
+
+function updateMapTiles(theme) {
+    if (!map) return;
+    if (baseTileLayer) {
+        try { map.removeLayer(baseTileLayer); } catch (e) {}
+    }
+    const isLight = theme === 'light';
+    const tileUrl = isLight
+        ? 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
+        : 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png';
+    baseTileLayer = L.tileLayer(tileUrl, {
+        attribution: '&copy; <a href="https://carto.com/">CARTO</a> | &copy; OpenStreetMap contributors',
+        maxZoom: 18,
+        subdomains: 'abcd'
+    }).addTo(map);
+}
+window.updateMapTiles = updateMapTiles;
+
+function setAppTheme(theme) {
+    const isLight = theme === 'light';
+    if (isLight) {
+        document.body.classList.add('theme-light');
+    } else {
+        document.body.classList.remove('theme-light');
+    }
+    localStorage.setItem('quantum_vrp_theme', theme);
+
+    const toggleIcon = document.getElementById('themeToggleIcon');
+    const toggleText = document.getElementById('themeToggleText');
+    if (toggleIcon) toggleIcon.textContent = isLight ? '☀️' : '🌙';
+    if (toggleText) toggleText.textContent = isLight ? 'Light' : 'Dark';
+
+    updateMapTiles(theme);
+}
+window.setAppTheme = setAppTheme;
+
+function toggleAppTheme() {
+    const current = document.body.classList.contains('theme-light') ? 'light' : 'dark';
+    const next = current === 'light' ? 'dark' : 'light';
+    setAppTheme(next);
+}
+window.toggleAppTheme = toggleAppTheme;
 
 // Safe DOM text setter helper
 function setElText(id, text) {
@@ -129,12 +177,8 @@ function initMap() {
         attributionControl: true
     }).setView([28.6139, 77.2090], 11); // Delhi default
 
-    // Clean Fastly CDN dark tiles without watermark
-    L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a> | &copy; OpenStreetMap contributors',
-        maxZoom: 18,
-        subdomains: 'abcd'
-    }).addTo(map);
+    // Load tiles according to active theme (Dark Matter or Positron Light)
+    updateMapTiles(getStoredTheme());
 
     // Place default depot at Delhi
     placeDepot(28.6139, 77.2090);
@@ -2529,6 +2573,7 @@ window.closeLightboxOnBackdrop = closeLightboxOnBackdrop;
 
 // ---- Initialize On Page Load ----
 document.addEventListener('DOMContentLoaded', async () => {
+    setAppTheme(getStoredTheme());
     initMap();
     initSliders();
     loadCities();
