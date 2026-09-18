@@ -4,5 +4,12 @@ src/
 scratch/
 outputs/
 data/
+verification/
+final_graphs/
+tests/
+cache/
+map/
+scripts/
 *.py
 *.log
+*.pptx

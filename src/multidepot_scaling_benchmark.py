@@ -93,28 +93,21 @@ def run_depot_scaling_benchmark():
             nearest_d = min(range(D), key=lambda d: math.hypot(c_pt[0] - depots_coords[d][0], c_pt[1] - depots_coords[d][1]))
             cust_clusters[nearest_d].append(i)
 
-        # Proportional Vehicle Allocation (Hamilton Largest Remainder)
-        vehs_per_depot = {d: 1 for d in range(D)}
-        rem_vehs = NUM_VEHICLES - D
+        # Proportional Vehicle Allocation with Guaranteed Capacity Feasibility
         c_demands = [sum(demands[i] for i in cust_clusters[d]) for d in range(D)]
-        total_dem = max(1, sum(c_demands))
-        exact_shares = [rem_vehs * c_demands[d] / total_dem for d in range(D)]
-        for d in range(D):
-            vehs_per_depot[d] += int(exact_shares[d])
-        leftover = NUM_VEHICLES - sum(vehs_per_depot.values())
-        rem_ranks = sorted(range(D), key=lambda d: exact_shares[d] - int(exact_shares[d]), reverse=True)
-        for d in rem_ranks[:leftover]:
-            vehs_per_depot[d] += 1
+        active_depots = [d for d in range(D) if len(cust_clusters[d]) > 0]
+        vehs_per_depot = {d: 0 for d in range(D)}
 
-        # Safeguard capacity feasibility
-        for d in range(D):
-            while c_demands[d] > vehs_per_depot[d] * CAPACITY:
-                donor = max(range(D), key=lambda k: (vehs_per_depot[k] * CAPACITY - c_demands[k]) if vehs_per_depot[k] > 1 else -999)
-                if donor != d and vehs_per_depot[donor] > 1 and (vehs_per_depot[donor] - 1) * CAPACITY >= c_demands[donor]:
-                    vehs_per_depot[donor] -= 1
-                    vehs_per_depot[d] += 1
-                else:
-                    break
+        # 1. Base assignment: Every active depot receives minimum vehicles to satisfy capacity
+        for d in active_depots:
+            vehs_per_depot[d] = max(1, math.ceil(c_demands[d] / CAPACITY))
+
+        # 2. Distribute remaining vehicles to active depots with highest demand/vehicle load
+        rem_vehs = NUM_VEHICLES - sum(vehs_per_depot.values())
+        if rem_vehs > 0:
+            for _ in range(rem_vehs):
+                d_pick = max(active_depots, key=lambda d: c_demands[d] / vehs_per_depot[d])
+                vehs_per_depot[d_pick] += 1
 
         print(f"  Depot customer distribution: {[len(cust_clusters[d]) for d in range(D)]}", flush=True)
         print(f"  Fleet distribution:          {[vehs_per_depot[d] for d in range(D)]} vehicles", flush=True)

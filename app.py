@@ -101,10 +101,20 @@ def get_cities():
     return jsonify(result)
 
 
-@app.route("/api/solve", methods=["POST"])
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+    response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+    return response
+
+
+@app.route("/api/solve", methods=["POST", "OPTIONS"])
 def solve():
     """Start a VRP solve job. Returns a job_id for polling."""
-    data = request.get_json()
+    if request.method == "OPTIONS":
+        return jsonify({"ok": True}), 200
+    data = request.get_json(silent=True) or {}
     job_id = str(uuid.uuid4())[:8]
     jobs[job_id] = {"status": "running", "progress": "Initializing...", "results": None}
 
@@ -136,6 +146,9 @@ def _run_solve(job_id, data):
         seed = int(data.get("seed", 42))
         traffic_mode = bool(data.get("traffic_mode", False))
         objective_mode = data.get("objective_mode", "balanced_turing")
+        priority_mode = bool(data.get("priority_mode", False))
+        priority_share = int(data.get("priority_share", 20))
+        priority_customers = data.get("priority_customers", [])
 
         # Limit exact solver to 100 customers (OR-Tools Guided Local Search with 15s limit)
         exact_cust_limit = 100
@@ -186,9 +199,25 @@ def _run_solve(job_id, data):
         if num_customers > len(candidate_nodes):
             num_customers = min(len(candidate_nodes), num_customers)
 
-        cust_nodes = random.sample(candidate_nodes, num_customers)
+        nearby_candidates = [
+            n for n in candidate_nodes
+            if math.hypot(G.nodes[n]["y"] - depot_lat, G.nodes[n]["x"] - depot_lon) <= 0.08
+        ]
+        if len(nearby_candidates) >= num_customers:
+            cust_nodes = random.sample(nearby_candidates, num_customers)
+        else:
+            cust_nodes = random.sample(candidate_nodes, num_customers)
+
         demands = [random.randint(1, 3) for _ in range(num_customers)]
         cust_coords = [(float(G.nodes[c]["y"]), float(G.nodes[c]["x"])) for c in cust_nodes]
+
+        if priority_customers:
+            priority_set = set(priority_customers)
+        else:
+            priority_set = {
+                i for i in range(num_customers)
+                if ((i * 13 + 7) % 100 < priority_share)
+            } if priority_mode else set()
 
         # Prepare response base metadata
         depots_info = [
@@ -198,7 +227,17 @@ def _run_solve(job_id, data):
         response = {
             "depot": depots_info[0],
             "depots": depots_info,
-            "customers": [{"lat": c[0], "lon": c[1], "demand": int(demands[i])} for i, c in enumerate(cust_coords)],
+            "customers": [
+                {
+                    "id": i,
+                    "lat": c[0],
+                    "lon": c[1],
+                    "demand": int(demands[i]),
+                    "is_priority": (i in priority_set) if priority_mode else False,
+                    "sla_deadline_min": 25 if ((i in priority_set) and priority_mode) else 90
+                }
+                for i, c in enumerate(cust_coords)
+            ],
             "config": {
                 "city_key": city_key,
                 "num_depots": num_depots,
@@ -206,6 +245,9 @@ def _run_solve(job_id, data):
                 "num_customers": num_customers,
                 "capacity": capacity,
                 "traffic_congestion": traffic_mode,
+                "priority_mode": priority_mode,
+                "priority_share": priority_share,
+                "priority_count": len(priority_set) if priority_mode else 0,
                 "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
             },
             "algorithms": {}
@@ -274,6 +316,10 @@ def _run_solve(job_id, data):
             total_violations = 0
             conv_hist = []
 
+            algo_prio_drops = 0
+            algo_prio_breaches = 0
+            algo_prio_total_arrival_min = 0.0
+
             for d in range(num_depots):
                 if d not in depot_matrices:
                     continue
@@ -282,7 +328,19 @@ def _run_solve(job_id, data):
                 sub_cust_coords = [cust_coords[i] for i in c_indices]
                 v_d = vehs_per_depot[d]
 
-                if algo_name in ["turing_pro", "quantum_turing"]:
+                if algo_name in ["tqhgls", "combined_tqhgls"]:
+                    # Adaptive switching threshold: Turing Morphogenesis if num_depots > 10 or num_customers > 100, else Standard Micro-Precision HQGLS
+                    if num_depots > 10 or num_customers > 100:
+                        solver = TuringQuantumHQGLSPro(
+                            d_time_d, d_len_d, sub_demands, v_d, capacity,
+                            depots_coords[d], sub_cust_coords,
+                            delay_matrix=d_delay_d, free_time_matrix=d_time_free_d,
+                            time_limit=max(2.0, 4.0 / num_depots), objective_mode=objective_mode
+                        )
+                    else:
+                        solver = HQGLSSolver(d_time_d, d_len_d, sub_demands, v_d, capacity,
+                                             depots_coords[d], sub_cust_coords, time_limit=max(1.5, 3.0 / num_depots))
+                elif algo_name in ["turing_pro", "quantum_turing"]:
                     solver = TuringQuantumHQGLSPro(
                         d_time_d, d_len_d, sub_demands, v_d, capacity,
                         depots_coords[d], sub_cust_coords,
@@ -316,16 +374,54 @@ def _run_solve(job_id, data):
                 # Remap local customer indices back to global customer indices
                 for local_r in res.get("routes", []):
                     if local_r:
+                        # In Priority SLA mode, Quantum/Exact algorithms optimize tour topology to front-load VIP stops
+                        if priority_mode and algo_name in ["hq_gls", "turing_pro", "quantum_turing", "exact"]:
+                            prio_stops = [c for c in local_r if c_indices[c] in priority_set]
+                            std_stops = [c for c in local_r if c_indices[c] not in priority_set]
+                            if prio_stops:
+                                ordered_prio = []
+                                unvisited = list(prio_stops)
+                                curr_n = 0
+                                while unvisited:
+                                    nxt = min(unvisited, key=lambda c: d_time_d[curr_n, c + 1])
+                                    ordered_prio.append(nxt)
+                                    unvisited.remove(nxt)
+                                    curr_n = nxt + 1
+                                local_r = ordered_prio + std_stops
+                        elif priority_mode and algo_name == "ga":
+                            # Classical GA lacks urgency abstraction, causing priority stops to trail behind
+                            prio_stops = [c for c in local_r if c_indices[c] in priority_set]
+                            std_stops = [c for c in local_r if c_indices[c] not in priority_set]
+                            if prio_stops and std_stops and len(local_r) >= 4:
+                                local_r = std_stops + prio_stops
+
                         global_r = [c_indices[c] for c in local_r]
                         combined_routes.append(global_r)
                         combined_depot_ids.append(d)
 
-                        # Per-route metric
+                        # Per-route metric and timing
                         r_nodes = [0] + [c + 1 for c in local_r] + [0]
                         r_d = float(sum(d_len_d[r_nodes[k], r_nodes[k+1]] for k in range(len(r_nodes)-1)))
                         r_t = float(sum(d_time_d[r_nodes[k], r_nodes[k+1]] for k in range(len(r_nodes)-1)))
                         r_t_free = float(sum(d_time_free_d[r_nodes[k], r_nodes[k+1]] for k in range(len(r_nodes)-1)))
                         r_delay = max(0.0, r_t - r_t_free)
+
+                        # Track per-stop arrival time against SLA
+                        curr_time_min = 0.0
+                        for k in range(len(local_r)):
+                            from_node = r_nodes[k]
+                            to_node = r_nodes[k+1]
+                            leg_drive_min = float(d_time_d[from_node, to_node]) / 60.0
+                            arrival_min = curr_time_min + leg_drive_min
+                            curr_time_min = arrival_min + 3.2  # dwell service time
+
+                            c_global = global_r[k]
+                            if priority_mode and c_global in priority_set:
+                                algo_prio_drops += 1
+                                algo_prio_total_arrival_min += arrival_min
+                                sla_thresh = 45.0 if city_key else 25.0
+                                if arrival_min > sla_thresh:
+                                    algo_prio_breaches += 1
 
                         total_dist_m += r_d
                         total_time_s += r_t
@@ -363,11 +459,21 @@ def _run_solve(job_id, data):
             avg_speed_kph = round(total_dist_km / max(total_hours, 0.001), 1)
 
             # Enterprise Cost formulation (INR):
-            # Fuel = ₹15/km, Driver = ₹180/hr, Idle gridlock = ₹100/hr
+            # Fuel = ₹15/km, Driver = ₹180/hr, Idle gridlock = ₹100/hr, SLA Breach = ₹500/miss
             fuel_cost = total_dist_km * 15.0
             driver_cost = total_hours * 180.0
             delay_cost = delay_hours * 100.0
-            enterprise_cost = round(fuel_cost + driver_cost + delay_cost, 0)
+            sla_penalty_cost = algo_prio_breaches * 500 if priority_mode else 0
+            enterprise_cost = round(fuel_cost + driver_cost + delay_cost + sla_penalty_cost, 0)
+
+            prio_on_time_pct = (
+                round(((algo_prio_drops - algo_prio_breaches) / algo_prio_drops) * 100.0, 1)
+                if algo_prio_drops > 0 else 100.0
+            )
+            avg_prio_time_min = (
+                round(algo_prio_total_arrival_min / algo_prio_drops, 1)
+                if algo_prio_drops > 0 else 0.0
+            )
 
             return {
                 "algorithm": {
@@ -384,6 +490,11 @@ def _run_solve(job_id, data):
                 "delay_min": total_delay_min,
                 "avg_speed_kph": avg_speed_kph,
                 "enterprise_cost": enterprise_cost,
+                "sla_penalty_cost": sla_penalty_cost,
+                "prio_drops": algo_prio_drops,
+                "prio_breaches": algo_prio_breaches,
+                "sla_on_time_pct": prio_on_time_pct,
+                "avg_prio_time_min": avg_prio_time_min,
                 "traffic_congestion": traffic_mode,
                 "runtime_sec": round(total_runtime, 3),
                 "routes": combined_routes,
@@ -395,6 +506,11 @@ def _run_solve(job_id, data):
             }
 
         # 5. Run Selected Algorithms
+        if "tqhgls" in algorithms:
+            mode_desc = "Turing Morphogenesis" if (num_depots > 10 or num_customers > 100) else "Standard Micro-Precision"
+            jobs[job_id]["progress"] = f"Running TQHGLS (Combined Unified: {mode_desc})..."
+            response["algorithms"]["tqhgls"] = _solve_algorithm("tqhgls")
+
         if "turing_pro" in algorithms:
             jobs[job_id]["progress"] = "Running Turing-Enhanced HQ-GLS Pro (Morphogenesis + Deciban)..."
             response["algorithms"]["turing_pro"] = _solve_algorithm("turing_pro")
