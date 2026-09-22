@@ -368,7 +368,7 @@ body {
     border-radius: 50%;
 }
 
-.algo-dot.hq_gls { background: var(--accent-hqgls); box-shadow: 0 0 8px rgba(56, 189, 248, 0.6); }
+.algo-dot.tqhgls, .algo-dot.hq_gls { background: #00f5a0; box-shadow: 0 0 10px rgba(0, 245, 160, 0.7); }
 .algo-dot.qpso { background: var(--accent-qpso); }
 .algo-dot.ga { background: var(--accent-ga); }
 .algo-dot.exact { background: var(--accent-exact); }

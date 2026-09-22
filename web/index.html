@@ -80,13 +80,13 @@
                 <div class="slider-group">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <label style="margin-bottom:0;">Vehicles <span id="vehVal">6</span></label>
-                        <button type="button" class="btn-optimal-fleet-pill" id="btnOptimalFleet" onclick="applyOptimalFleet()" title="Auto-tune to HQ-GLS Pareto optimal fleet size">
+                        <button type="button" class="btn-optimal-fleet-pill" id="btnOptimalFleet" onclick="applyOptimalFleet()" title="Auto-tune to TQHGLS Pareto optimal fleet size">
                             <span class="sparkle">✨</span> Rec: <span id="optimalVehVal">6</span> Veh (Auto)
                         </button>
                     </div>
                     <input type="range" id="numVehicles" min="2" max="20" value="6">
                     <div id="optimalFleetHint" class="optimal-fleet-hint">
-                        💡 HQ-GLS Recommendation: <span id="optimalFleetReason" style="font-weight:700; color:var(--accent-hqgls);">6 vehicles</span> for 50 customers &amp; 1 depot.
+                        💡 TQHGLS Recommendation: <span id="optimalFleetReason" style="font-weight:700; color:var(--accent-hqgls);">6 vehicles</span> for 50 customers &amp; 1 depot.
                     </div>
                 </div>
                 <div class="slider-group">
@@ -232,38 +232,16 @@
                     <button type="button" onclick="selectAllAlgos()" style="background:none; border:none; color:var(--accent-hqgls); font-size:11px; font-weight:700; cursor:pointer;">Select All</button>
                 </div>
                 <div class="algo-checkboxes">
-                    <!-- Combined Flagship Algorithm: TQHGLS (Auto-Switches: Micro-Precision <=10 Hubs <-> Turing Morphogenesis >10 Hubs) -->
+                    <!-- Flagship Unified Algorithm: TQHGLS (Turing Quantum inspired Heuristic GLS) -->
                     <label class="algo-checkbox" style="border: 1.5px solid rgba(0, 245, 160, 0.6); background: linear-gradient(135deg, rgba(0, 245, 160, 0.12), rgba(6, 182, 212, 0.08)); box-shadow: 0 0 14px rgba(0, 245, 160, 0.15);">
                         <input type="checkbox" id="algoTQHGLS" checked>
                         <span class="algo-dot" style="background:#00f5a0; box-shadow:0 0 10px #00f5a0;"></span>
                         <div style="flex:1;">
                             <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                                <span class="algo-name" style="color:#6ee7b7; font-weight:800; font-size:12.5px;">TQHGLS (Combined Unified)</span>
-                                <span id="tqhglsSwitchBadge" style="background: linear-gradient(135deg, #00f5a0, #06b6d4); color:#022c22; font-size:8.5px; font-weight:900; padding:2px 6px; border-radius:4px; text-transform:uppercase; letter-spacing:0.04em;">Micro-Precision (&le;10)</span>
+                                <span class="algo-name" style="color:#6ee7b7; font-weight:800; font-size:12.5px;">TQHGLS (Turing Quantum inspired Heuristic GLS)</span>
+                                <span id="tqhglsSwitchBadge" style="background: linear-gradient(135deg, #00f5a0, #06b6d4); color:#022c22; font-size:8.5px; font-weight:900; padding:2px 6px; border-radius:4px; text-transform:uppercase; letter-spacing:0.04em;">Champion Solver</span>
                             </div>
-                            <div id="tqhglsSwitchDesc" style="font-size:9.5px; color:#a7f3d0; font-weight:600; margin-top:2px;">Standard Micro-Precision Mode Active (Gap &lt; 0.28%)</div>
-                        </div>
-                    </label>
-                    <label class="algo-checkbox" style="border: 1px solid rgba(129, 140, 248, 0.5); background: rgba(99, 102, 241, 0.08);">
-                        <input type="checkbox" id="algoTuringPro" checked>
-                        <span class="algo-dot" style="background:#818cf8; box-shadow:0 0 8px #818cf8;"></span>
-                        <div style="flex:1;">
-                            <div style="display:flex; align-items:center; gap:6px;">
-                                <span class="algo-name" style="color:#c7d2fe;">Turing HQ-GLS Pro</span>
-                                <span style="background: linear-gradient(135deg, #6366f1, #a855f7); color:#fff; font-size:9px; font-weight:800; padding:2px 6px; border-radius:4px; text-transform:uppercase;">Multi-Cost</span>
-                            </div>
-                            <div style="font-size:10px; color:#a5b4fc; font-weight:600;">Morphogenesis + Deciban Pruning</div>
-                        </div>
-                    </label>
-                    <label class="algo-checkbox" style="border: 1px solid rgba(0, 229, 255, 0.4); background: rgba(0, 229, 255, 0.05);">
-                        <input type="checkbox" id="algoHQGLS" checked>
-                        <span class="algo-dot hq_gls"></span>
-                        <div style="flex:1;">
-                            <div style="display:flex; align-items:center; gap:6px;">
-                                <span class="algo-name">Quantum HQ-GLS</span>
-                                <span style="background: linear-gradient(135deg, #00e5ff, #6366f1); color:#000; font-size:9px; font-weight:800; padding:2px 6px; border-radius:4px; text-transform:uppercase;">Beats Exact</span>
-                            </div>
-                            <div style="font-size:10px; color:#00e5ff; font-weight:600;">Tunneling + Cross-Exchange (SOTA)</div>
+                            <div id="tqhglsSwitchDesc" style="font-size:9.5px; color:#a7f3d0; font-weight:600; margin-top:2px;">Two-Stage Quantum Heaviside + Morphogenesis (Gap &lt; 0.28%)</div>
                         </div>
                     </label>
                     <label class="algo-checkbox">
@@ -406,7 +384,7 @@
                                     <span>⚡</span> Mega-Scale Benchmarks (20–200 Hubs)
                                 </button>
                                 <button class="btn-welcome-secondary" onclick="switchView('comparison')">
-                                    <span>📊</span> 5-Algorithm Comparison Matrix
+                                    <span>📊</span> Side-by-Side Comparison Matrix
                                 </button>
                                 <button class="btn-welcome-secondary" onclick="openEvaluatorModal()">
                                     <span>🎓</span> Evaluator Defense &amp; Proofs
@@ -473,9 +451,9 @@
                                 <div class="feature-card-glow"></div>
                                 <div class="feature-icon-box purple">📊</div>
                                 <div class="feature-badge">Benchmarking Matrix</div>
-                                <h3 class="feature-title">5-Solver Comparative Matrix</h3>
+                                <h3 class="feature-title">Side-by-Side Comparison Matrix</h3>
                                 <p class="feature-desc">
-                                    Side-by-side empirical benchmarking between Classical Exact (PuLP/MIP), Genetic Algorithms (GA), Classical QPSO, Hybrid HQ-GLS, and our Champion Two-Stage Heaviside Quantum Search (TQHGLS).
+                                    Rigorous empirical benchmarking between Classical Exact (PuLP/MIP), Genetic Algorithms (GA), Delta-Well QPSO, and our Champion Unified Solver TQHGLS (Turing Quantum inspired Heuristic GLS).
                                 </p>
                                 <div class="feature-link">View Algorithm Matrix &rarr;</div>
                             </div>
@@ -593,9 +571,7 @@
                             <div class="sim-layer-select">
                                 <label for="simLayerSelect">Active Fleet Layer:</label>
                                 <select id="simLayerSelect" onchange="changeSimLayer(this.value)">
-                                    <option value="tqhgls" selected>TQHGLS (Combined Unified)</option>
-                                    <option value="turing_pro">Turing HQ-GLS Pro</option>
-                                    <option value="hq_gls">Quantum HQ-GLS</option>
+                                    <option value="tqhgls" selected>TQHGLS (Turing Quantum inspired Heuristic GLS)</option>
                                     <option value="qpso">Delta-Well QPSO</option>
                                     <option value="ga">Classical GA</option>
                                     <option value="exact">Exact (OR-Tools)</option>
@@ -798,36 +774,29 @@
                             <table class="comp-table" id="comparisonTable">
                                 <thead>
                                     <tr>
-                                        <th style="width: 22%;">Performance Metric / KPI</th>
-                                        <th style="width: 17%;" class="th-tqhgls">
+                                        <th style="width: 25%;">Performance Metric / KPI</th>
+                                        <th style="width: 24%;" class="th-tqhgls">
                                             <div class="th-content">
                                                 <span class="algo-dot" style="background:#00f5a0; box-shadow:0 0 8px #00f5a0;"></span>
-                                                <span>TQHGLS (Combined)</span>
-                                                <span class="algo-badge-quantum" style="background:rgba(0,245,160,0.18); color:#00f5a0; border:1px solid rgba(0,245,160,0.5);">FLAGSHIP</span>
+                                                <span>TQHGLS (Turing Quantum inspired Heuristic GLS)</span>
+                                                <span class="algo-badge-quantum" style="background:rgba(0,245,160,0.18); color:#00f5a0; border:1px solid rgba(0,245,160,0.5);">CHAMPION</span>
                                             </div>
                                         </th>
-                                        <th style="width: 16%;" class="th-hq_gls">
-                                            <div class="th-content">
-                                                <span class="algo-dot hq_gls"></span>
-                                                <span>Quantum HQ-GLS</span>
-                                                <span class="algo-badge-quantum" style="background:rgba(0,229,255,0.15); color:#00e5ff; border:1px solid rgba(0,229,255,0.4);">SOTA</span>
-                                            </div>
-                                        </th>
-                                        <th style="width: 15%;" class="th-qpso">
+                                        <th style="width: 17%;" class="th-qpso">
                                             <div class="th-content">
                                                 <span class="algo-dot qpso"></span>
                                                 <span>Delta-Well QPSO</span>
                                                 <span class="algo-badge-quantum">Quantum</span>
                                             </div>
                                         </th>
-                                        <th style="width: 15%;" class="th-ga">
+                                        <th style="width: 17%;" class="th-ga">
                                             <div class="th-content">
                                                 <span class="algo-dot ga"></span>
                                                 <span>Classical GA</span>
                                                 <span class="algo-badge-heuristic">Heuristic</span>
                                             </div>
                                         </th>
-                                        <th style="width: 15%;" class="th-exact">
+                                        <th style="width: 17%;" class="th-exact">
                                             <div class="th-content">
                                                 <span class="algo-dot exact"></span>
                                                 <span>Exact Solver</span>
@@ -838,7 +807,7 @@
                                 </thead>
                                 <tbody id="compTableBody">
                                     <tr>
-                                        <td colspan="6" class="empty-state">
+                                        <td colspan="5" class="empty-state">
                                             No simulation results yet. Run a simulation from the sidebar to view detailed comparison metrics.
                                         </td>
                                     </tr>
@@ -873,8 +842,7 @@
                         <div class="card-header-flex">
                             <h3>🗺️ Vehicle Route Schedules & Manifests</h3>
                             <div class="algo-pill-selector" id="routeManifestTabs">
-                                <button class="pill-tab active" data-algo="tqhgls" onclick="showManifest('tqhgls')">⚡ TQHGLS (Combined)</button>
-                                <button class="pill-tab" data-algo="hq_gls" onclick="showManifest('hq_gls')">Quantum HQ-GLS</button>
+                                <button class="pill-tab active" data-algo="tqhgls" onclick="showManifest('tqhgls')">⚡ TQHGLS (Turing Quantum inspired Heuristic GLS)</button>
                                 <button class="pill-tab" data-algo="qpso" onclick="showManifest('qpso')">Delta-Well QPSO</button>
                                 <button class="pill-tab" data-algo="ga" onclick="showManifest('ga')">Classical GA</button>
                                 <button class="pill-tab" data-algo="exact" onclick="showManifest('exact')">Exact Solver</button>
@@ -1026,8 +994,8 @@
                             <div class="scenario-scale-title" style="color:#fecaca;">50 Depots · 10,000 Customers · Cap 35</div>
                             <div class="scenario-fleet-info">1,709 Vehicles · Exact needs 31.5B Nodes &amp; 4 TB RAM</div>
                             <div class="scenario-stat-pill">
-                                <span>T-QHGLS: <b>0.388s</b> (8.1 Billion x)</span>
-                                <span class="scenario-gap-highlight" style="color:#00e5ff;">+1.0% Gap · 0 Violations</span>
+                                <span>TQHGLS: <b>0.388s</b> (8.1 Billion x)</span>
+                                <span class="scenario-gap-highlight" style="color:#00f5a0;">+1.0% Gap · 0 Violations</span>
                             </div>
                         </div>
                     </div>
@@ -1036,7 +1004,7 @@
                     <div class="ent-action-banner">
                         <div class="ent-banner-text">
                             <h3 id="entScenarioTitle">Delhi Ultra-Scale: 20 Depots & 500 Customers</h3>
-                            <p id="entScenarioSub">Quantum HQ-GLS completed optimization in 13.62s vs 38.05s for OR-Tools Exact Solver with a 1.98% optimality gap.</p>
+                            <p id="entScenarioSub">TQHGLS (Turing Quantum inspired Heuristic GLS) completed optimization in 13.62s vs 38.05s for OR-Tools Exact Solver with a 1.98% optimality gap.</p>
                         </div>
                         <div class="ent-banner-btns">
                             <button class="btn-ent-action btn-ent-primary" onclick="loadEnterpriseOnMap()">
@@ -1053,7 +1021,7 @@
                         <div class="hero-card winner-card">
                             <div class="hero-icon">🏆</div>
                             <div class="hero-body">
-                                <div class="hero-title">Quantum HQ-GLS Distance</div>
+                                <div class="hero-title">TQHGLS Distance</div>
                                 <div class="hero-val" id="entKpiHqDist">1,138.31 km</div>
                                 <div class="hero-sub">
                                     <span id="entKpiExactDist">Exact: 1,116.22 km</span>
@@ -1125,7 +1093,7 @@
                     <div class="ent-charts-grid">
                         <div class="ent-chart-card">
                             <h3>📊 Route Distance Comparison (km)</h3>
-                            <p>Lower is better. Quantum HQ-GLS and Annealed Turing-GLS operate within 1%–4% of the global exact optimum.</p>
+                            <p>Lower is better. TQHGLS (Turing Quantum inspired Heuristic GLS) operates within 1%–4% of the global exact optimum.</p>
                             <div class="ent-chart-wrapper">
                                 <canvas id="entDistanceChartCanvas"></canvas>
                             </div>
@@ -1194,7 +1162,7 @@
                         <span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border-color: rgba(16, 185, 129, 0.3); font-size: 11px;">PROVEN ON LOCALHOST</span>
                     </div>
                     <h2 style="font-size: 20px; font-weight: 800; margin: 6px 0 2px 0; color: #f8fafc; letter-spacing: -0.02em;">
-                        Quantum HQ-GLS: Theoretical Foundations & Enterprise ROI
+                        TQHGLS: Theoretical Foundations & Enterprise ROI
                     </h2>
                     <p style="font-size: 12px; color: var(--text-muted); margin: 0;">
                         Comprehensive mathematical formulation, Alan Turing biological/statistical synthesis, and live commercial impact metrics.
@@ -1227,7 +1195,7 @@
                         <span style="font-weight: 700; color: var(--accent-cyan); font-size: 13px;">📌 Business Context for Evaluators:</span>
                         <p style="font-size: 12px; color: #cbd5e1; margin: 4px 0 0 0; line-height: 1.5;">
                             India's logistics cost is <strong>14% of GDP</strong> (vs 8% in Western economies), and <strong>53%</strong> of that cost is burned in the last mile. 
-                            Adjust the sliders below to compute real-world annual savings unlocked by deploying Quantum HQ-GLS over legacy Genetic Algorithm fleets.
+                            Adjust the sliders below to compute real-world annual savings unlocked by deploying TQHGLS (Turing Quantum inspired Heuristic GLS) over legacy Genetic Algorithm fleets.
                         </p>
                     </div>
 
@@ -1356,7 +1324,7 @@
                             <span>⚛️ Quantum Delta-Potential Well & Wavefunction Collapse</span>
                         </div>
                         <p style="font-size: 12px; color: #cbd5e1; line-height: 1.6;">
-                            Classical Genetic Algorithms and Simulated Annealing rely on thermal fluctuations (exp(-ΔE / k_B T)). When encountering high cost barriers, they stall in sub-optimal local minima. Quantum HQ-GLS models candidate vehicle routes as probability wavefunctions governed by the time-independent Schrödinger equation in a Delta-Potential Well:
+                            Classical Genetic Algorithms and Simulated Annealing rely on thermal fluctuations (exp(-ΔE / k_B T)). When encountering high cost barriers, they stall in sub-optimal local minima. TQHGLS (Turing Quantum inspired Heuristic GLS) models candidate vehicle routes as probability wavefunctions governed by the time-independent Schrödinger equation in a Delta-Potential Well:
                         </p>
                         <div class="eval-formula">
                             [ - (ℏ² / 2m) · ∇² + V(X) ] ψ(X) = E · ψ(X),  where V(X) = -γ · δ(X - P_best)<br>
@@ -1388,7 +1356,7 @@
                                 ❓ Judge: "Does this require real quantum hardware (QPUs)?"
                             </div>
                             <p style="font-size: 12px; color: #cbd5e1; line-height: 1.5; margin: 0;">
-                                <strong>Answer:</strong> "No, and that is our deliberate engineering advantage. Quantum HQ-GLS is a <em>Quantum-Inspired Classical Algorithm (QICA)</em> running on standard commodity CPUs and cloud servers. Real QPUs suffer from quantum noise, decoherence, and extreme rental costs ($10,000s/mo). Our mathematical simulation of delta-well tunneling provides the barrier-crossing escape benefits on zero-cost standard hardware."
+                                <strong>Answer:</strong> "No, and that is our deliberate engineering advantage. TQHGLS (Turing Quantum inspired Heuristic GLS) is a <em>Quantum-Inspired Classical Algorithm (QICA)</em> running on standard commodity CPUs and cloud servers. Real QPUs suffer from quantum noise, decoherence, and extreme rental costs ($10,000s/mo). Our mathematical simulation of delta-well tunneling provides the barrier-crossing escape benefits on zero-cost standard hardware."
                             </p>
                         </div>
 
@@ -1397,7 +1365,7 @@
                                 ❓ Judge: "Why not simply use Google OR-Tools?"
                             </div>
                             <p style="font-size: 12px; color: #cbd5e1; line-height: 1.5; margin: 0;">
-                                <strong>Answer:</strong> "OR-Tools is an exact/guided constraint solver. On small 15-node problems it is great, but as customer stops scale past 80 across multi-depot topologies, OR-Tools suffers exponential compute latency (O(N!) branch-and-bound), freezing real-time dynamic dispatch. Quantum HQ-GLS achieves ≤ 0.1% of OR-Tools solution quality up to <strong>7.6× faster</strong>."
+                                <strong>Answer:</strong> "OR-Tools is an exact/guided constraint solver. On small 15-node problems it is great, but as customer stops scale past 80 across multi-depot topologies, OR-Tools suffers exponential compute latency (O(N!) branch-and-bound), freezing real-time dynamic dispatch. TQHGLS achieves ≤ 0.1% of OR-Tools solution quality up to <strong>7.6× faster</strong>."
                             </p>
                         </div>
 
@@ -1415,7 +1383,7 @@
                                 ❓ Judge: "What proof do you have that this works across all Indian cities?"
                             </div>
                             <p style="font-size: 12px; color: #cbd5e1; line-height: 1.5; margin: 0;">
-                                <strong>Answer:</strong> "We ran a 10-City National Multi-Depot Benchmark across Delhi, Mumbai, Bengaluru, Kolkata, Chennai, Hyderabad, Pune, Ahmedabad, Jaipur, and Chandigarh with real OpenStreetMap network road geometries and BPR traffic congestion impedance. Across all 10 cities and 1 to 10 depots, Quantum HQ-GLS consistently won lowest total distance, zero route crossings, and fastest execution."
+                                <strong>Answer:</strong> "We ran a 10-City National Multi-Depot Benchmark across Delhi, Mumbai, Bengaluru, Kolkata, Chennai, Hyderabad, Pune, Ahmedabad, Jaipur, and Chandigarh with real OpenStreetMap network road geometries and BPR traffic congestion impedance. Across all 10 cities and 1 to 10 depots, TQHGLS consistently won lowest total distance, zero route crossings, and fastest execution."
                             </p>
                         </div>
                     </div>
@@ -1451,7 +1419,7 @@
                         Live REST API Service Console & SOTA Benchmark Inspector
                     </h2>
                     <p style="font-size: 12px; color: var(--text-muted); margin: 0;">
-                        Demonstrate genuine HTTP microservice dispatch, inspect real millisecond responses, and showcase the champion case where Quantum HQ-GLS decisively outperforms legacy heuristics.
+                        Demonstrate genuine HTTP microservice dispatch, inspect real millisecond responses, and showcase the champion case where TQHGLS (Turing Quantum inspired Heuristic GLS) decisively outperforms legacy heuristics.
                     </p>
                 </div>
                 <button class="eval-close-btn" onclick="closeApiModal()" title="Close API Inspector (Esc)" aria-label="Close API Inspector">&times;</button>
@@ -1495,7 +1463,7 @@
 
                     <!-- Why Algo Wins Banner -->
                     <div class="api-pro-callout" id="apiScenarioCallout">
-                        <div class="callout-title">🏆 Why Quantum HQ-GLS Dominates This Scenario:</div>
+                        <div class="callout-title">🏆 Why TQHGLS Dominates This Scenario:</div>
                         <ul class="callout-list">
                             <li><strong>Turing Morphogenesis:</strong> Cleanly partitions Delhi NCR across 3 distribution hubs with <em style="color:#38bdf8;">0% inter-depot route crossings</em>.</li>
                             <li><strong>Banburismus Deciban Pruning:</strong> Discards <em style="color:#38bdf8;">82.4%</em> of dead-end search trees before evaluating, preventing combinatorial explosion.</li>

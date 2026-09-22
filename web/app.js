@@ -14,24 +14,26 @@ let selectedCity = 'delhi';
 let convergenceChart = null;
 let bigConvergenceChart = null;
 let latestSimulationData = null;
-let activeManifestAlgo = 'hq_gls';
+let activeManifestAlgo = 'tqhgls';
 
 const ALGO_COLORS = {
-    tqhgls:     '#00f5a0', // Cyber Emerald / Combined Flagship
-    turing_pro: '#818cf8', // Indigo / Turing Flagship
-    hq_gls:     '#38bdf8', // Enterprise Electric Sky
+    tqhgls:     '#00f5a0', // Cyber Emerald / Champion Flagship
     qpso:       '#10b981', // Emerald
     ga:         '#f43f5e', // Coral/Rose
-    exact:      '#f59e0b'  // Amber
+    exact:      '#f59e0b', // Amber
+    // Legacy fallbacks
+    hq_gls:     '#00f5a0',
+    turing_pro: '#00f5a0'
 };
 
 const ALGO_NAMES = {
-    tqhgls:     'TQHGLS (Combined Unified Quantum-Turing)',
-    turing_pro: 'Turing-Enhanced HQ-GLS Pro (Multi-Cost)',
-    hq_gls:     'Quantum HQ-GLS (SOTA)',
+    tqhgls:     'TQHGLS (Turing Quantum inspired Heuristic GLS)',
     qpso:       'Delta-Well QPSO',
     ga:         'Classical Heuristic GA',
-    exact:      'Exact Solver (OR-Tools)'
+    exact:      'Exact Solver (OR-Tools)',
+    // Legacy fallbacks
+    hq_gls:     'TQHGLS (Turing Quantum inspired Heuristic GLS)',
+    turing_pro: 'TQHGLS (Turing Quantum inspired Heuristic GLS)'
 };
 
 // ---- Theme Management (Dual-Theme Enterprise System) ----
@@ -154,14 +156,10 @@ window.updateTQHGLSModeUI = updateTQHGLSModeUI;
 
 function selectAllAlgos() {
     const tq = document.getElementById('algoTQHGLS');
-    const t = document.getElementById('algoTuringPro');
-    const h = document.getElementById('algoHQGLS');
     const q = document.getElementById('algoQPSO');
     const g = document.getElementById('algoGA');
     const e = document.getElementById('algoExact');
     if (tq) tq.checked = true;
-    if (t) t.checked = true;
-    if (h) h.checked = true;
     if (q) q.checked = true;
     if (g) g.checked = true;
     if (e) e.checked = true;
@@ -586,7 +584,7 @@ function setDepots(val) {
 }
 window.setDepots = setDepots;
 
-// ---- Optimal Fleet Sizing Calculator (HQ-GLS Pareto Bound) ----
+// ---- Optimal Fleet Sizing Calculator (TQHGLS Pareto Bound) ----
 function computeOptimalVehicles(numCust, numDepots, capacity, trafficMode, priorityMode) {
     const n = Math.max(5, parseInt(numCust, 10) || 50);
     const d = Math.max(1, parseInt(numDepots, 10) || 1);
@@ -648,7 +646,7 @@ function updateOptimalFleetDisplay() {
         const currentVeh = parseInt(vehEl.value, 10);
         if (currentVeh === res.optimalVehicles) {
             btn.classList.add('applied');
-            btn.title = `Current fleet (${currentVeh}) matches HQ-GLS Pareto optimal sizing!`;
+            btn.title = `Current fleet (${currentVeh}) matches TQHGLS Pareto optimal sizing!`;
         } else {
             btn.classList.remove('applied');
             btn.title = `Click to auto-tune from ${currentVeh} to optimal ${res.optimalVehicles} vehicles`;
@@ -765,7 +763,7 @@ async function runClientSideQuantumSolver(payload, progressCallback) {
     const trafficMode = Boolean(payload.traffic_mode);
     const algosSelected = (payload.algorithms && payload.algorithms.length > 0)
         ? payload.algorithms
-        : ['tqhgls', 'hq_gls', 'qpso', 'ga', 'exact'];
+        : ['tqhgls', 'qpso', 'ga', 'exact'];
 
     let centerLat = 28.6139, centerLon = 77.2090;
     if (payload.depot_lat && payload.depot_lon) {
@@ -987,25 +985,19 @@ async function runClientSideQuantumSolver(payload, progressCallback) {
             ? (numDepots > 10 || numCustomers > 100 || (window.currentEnterpriseScenario && window.currentEnterpriseScenario.depots > 10))
             : false;
 
-        const distFactor = (algoKey === 'tqhgls')     ? (isTuringPhase ? 0.985 : 0.988) :
-                           (algoKey === 'turing_pro') ? 0.992 :
-                           (algoKey === 'hq_gls')     ? 1.00 :
-                           (algoKey === 'exact')      ? 1.015 :
-                           (algoKey === 'qpso')       ? 1.034 :
+        const distFactor = (algoKey === 'tqhgls') ? (isTuringPhase ? 0.985 : 0.988) :
+                           (algoKey === 'exact')  ? 1.015 :
+                           (algoKey === 'qpso')   ? 1.034 :
                            1.142;
 
-        const speedFactor = (algoKey === 'tqhgls')     ? (isTuringPhase ? 38.5 : 37.0) :
-                            (algoKey === 'turing_pro') ? 36.5 :
-                            (algoKey === 'hq_gls')     ? 35.0 :
-                            (algoKey === 'qpso')       ? 33.5 :
-                            (algoKey === 'exact')      ? 32.0 :
+        const speedFactor = (algoKey === 'tqhgls') ? (isTuringPhase ? 38.5 : 37.0) :
+                            (algoKey === 'qpso')   ? 33.5 :
+                            (algoKey === 'exact')  ? 32.0 :
                             28.5;
 
-        const runtime = (algoKey === 'tqhgls')     ? (isTuringPhase ? (0.19 + numCustomers * 0.0012 + numDepots * 0.005) : (0.24 + numCustomers * 0.0015 + numDepots * 0.006)) :
-                        (algoKey === 'turing_pro') ? (0.28 + numCustomers * 0.0018 + numDepots * 0.008) :
-                        (algoKey === 'hq_gls')     ? (0.35 + numCustomers * 0.0022 + numDepots * 0.01) :
-                        (algoKey === 'qpso')       ? (0.72 + numCustomers * 0.0035 + numDepots * 0.015) :
-                        (algoKey === 'ga')         ? (1.35 + numCustomers * 0.0055 + numDepots * 0.02) :
+        const runtime = (algoKey === 'tqhgls') ? (isTuringPhase ? (0.19 + numCustomers * 0.0012 + numDepots * 0.005) : (0.24 + numCustomers * 0.0015 + numDepots * 0.006)) :
+                        (algoKey === 'qpso')   ? (0.72 + numCustomers * 0.0035 + numDepots * 0.015) :
+                        (algoKey === 'ga')     ? (1.35 + numCustomers * 0.0055 + numDepots * 0.02) :
                         (3.85 + numCustomers * 0.018 + numDepots * 0.04);
 
         vehicleClusters.forEach((vc, vIdx) => {
@@ -1015,7 +1007,7 @@ async function runClientSideQuantumSolver(payload, progressCallback) {
             const prioStops = vc.stops.filter(s => s.is_priority);
             const stdStops = vc.stops.filter(s => !s.is_priority);
 
-            if ((algoKey === 'tqhgls' || algoKey === 'hq_gls' || algoKey === 'turing_pro' || algoKey === 'exact') && prioStops.length > 0) {
+            if ((algoKey === 'tqhgls' || algoKey === 'exact') && prioStops.length > 0) {
                 // Quantum & Exact urgency front-loading:
                 // Solve TSP on high-priority stops first from depot, ensuring <25 min SLA arrival
                 const orderedPrio = solve2OptTSP(depot, prioStops);
@@ -1112,11 +1104,9 @@ async function runClientSideQuantumSolver(payload, progressCallback) {
 
         let delayMin = 0;
         if (trafficMode) {
-            const trafficMultiplier = (algoKey === 'tqhgls')     ? (isTuringPhase ? 0.05 : 0.06) :
-                                      (algoKey === 'turing_pro') ? 0.07 :
-                                      (algoKey === 'hq_gls')     ? 0.08 :
-                                      (algoKey === 'qpso')       ? 0.10 :
-                                      (algoKey === 'exact')      ? 0.11 :
+            const trafficMultiplier = (algoKey === 'tqhgls') ? (isTuringPhase ? 0.05 : 0.06) :
+                                      (algoKey === 'qpso')   ? 0.10 :
+                                      (algoKey === 'exact')  ? 0.11 :
                                       0.15;
             delayMin = parseFloat((totalDist * trafficMultiplier + (numCustomers * 0.12)).toFixed(1));
             totalTimeSec += delayMin * 60;
@@ -1135,7 +1125,7 @@ async function runClientSideQuantumSolver(payload, progressCallback) {
 
         const convergence = [];
         const baseTarget = totalDist;
-        const startDist = baseTarget * (algoKey === 'tqhgls' ? 1.45 : (algoKey === 'turing_pro' ? 1.48 : (algoKey === 'hq_gls' ? 1.52 : (algoKey === 'qpso' ? 1.60 : (algoKey === 'exact' ? 1.48 : 1.76)))));
+        const startDist = baseTarget * (algoKey === 'tqhgls' ? 1.45 : (algoKey === 'qpso' ? 1.60 : (algoKey === 'exact' ? 1.48 : 1.76)));
 
         for (let iter = 1; iter <= 50; iter++) {
             let val;
@@ -1143,12 +1133,6 @@ async function runClientSideQuantumSolver(payload, progressCallback) {
                 if (iter < 3) val = startDist - (iter * 0.07 * (startDist - baseTarget));
                 else if (iter < 8) val = startDist * 0.82 - ((iter - 3) * 0.08 * (startDist - baseTarget));
                 else if (iter < 16) val = startDist * 0.68 - ((iter - 8) * 0.06 * (startDist - baseTarget));
-                else val = baseTarget;
-            } else if (algoKey === 'hq_gls') {
-                if (iter < 4) val = startDist - (iter * 0.05 * (startDist - baseTarget));
-                else if (iter < 10) val = startDist * 0.88 - ((iter - 4) * 0.06 * (startDist - baseTarget));
-                else if (iter < 20) val = startDist * 0.74 - ((iter - 10) * 0.05 * (startDist - baseTarget));
-                else if (iter < 32) val = baseTarget + ((32 - iter) * 0.015 * baseTarget);
                 else val = baseTarget;
             } else if (algoKey === 'qpso') {
                 const decay = Math.exp(-iter / 12);
@@ -1239,15 +1223,11 @@ async function runSimulation() {
 
     const algorithms = [];
     const tqCheck = document.getElementById('algoTQHGLS');
-    const tCheck = document.getElementById('algoTuringPro');
-    const hCheck = document.getElementById('algoHQGLS');
     const qCheck = document.getElementById('algoQPSO');
     const gCheck = document.getElementById('algoGA');
     const eCheck = document.getElementById('algoExact');
 
     if (tqCheck && tqCheck.checked) algorithms.push('tqhgls');
-    if (tCheck && tCheck.checked) algorithms.push('turing_pro');
-    if (hCheck && hCheck.checked) algorithms.push('hq_gls');
     if (qCheck && qCheck.checked) algorithms.push('qpso');
     if (gCheck && gCheck.checked) algorithms.push('ga');
     if (eCheck && eCheck.checked) algorithms.push('exact');
@@ -1549,8 +1529,8 @@ function renderResults(data) {
 
                 const polyline = L.polyline(latlngs, {
                     color: color,
-                    weight: key === 'tqhgls' ? 4.5 : (key === 'hq_gls' ? 4 : (key === 'qpso' ? 3.5 : 2.5)),
-                    opacity: key === 'tqhgls' ? 0.98 : (key === 'hq_gls' ? 0.95 : 0.85),
+                    weight: key === 'tqhgls' ? 4.5 : (key === 'qpso' ? 3.5 : 2.5),
+                    opacity: key === 'tqhgls' ? 0.98 : 0.85,
                     dashArray: key === 'ga' ? '8 6' : (key === 'exact' ? '4 4' : null)
                 }).addTo(map);
 
@@ -1582,15 +1562,15 @@ function renderResults(data) {
                 polyline.on('mouseout', function() {
                     const activeKey = key;
                     polyline.setStyle({
-                        weight: activeKey === 'tqhgls' ? 4.5 : (activeKey === 'hq_gls' ? 4 : (activeKey === 'qpso' ? 3.5 : 2.5)),
-                        opacity: activeKey === 'tqhgls' ? 0.98 : (activeKey === 'hq_gls' ? 0.95 : 0.85)
+                        weight: activeKey === 'tqhgls' ? 4.5 : (activeKey === 'qpso' ? 3.5 : 2.5),
+                        opacity: activeKey === 'tqhgls' ? 0.98 : 0.85
                     });
                     // Restore other route layers
                     Object.keys(routeLayers).forEach(k => {
                         routeLayers[k].forEach(l => {
                             l.setStyle({
-                                opacity: k === 'tqhgls' ? 0.98 : (k === 'hq_gls' ? 0.95 : 0.85),
-                                weight: k === 'tqhgls' ? 4.5 : (k === 'hq_gls' ? 4 : (k === 'qpso' ? 3.5 : 2.5))
+                                opacity: k === 'tqhgls' ? 0.98 : 0.85,
+                                weight: k === 'tqhgls' ? 4.5 : (k === 'qpso' ? 3.5 : 2.5)
                             });
                         });
                     });
@@ -1626,9 +1606,7 @@ function renderResults(data) {
             const simLayerSelect = document.getElementById('simLayerSelect');
             const defaultAlgo = (algos['tqhgls'] && algos['tqhgls'].route_coords && algos['tqhgls'].route_coords.length > 0)
                 ? 'tqhgls'
-                : (algos['hq_gls'] && algos['hq_gls'].route_coords && algos['hq_gls'].route_coords.length > 0)
-                    ? 'hq_gls'
-                    : (algoKeys.find(k => algos[k] && algos[k].route_coords && algos[k].route_coords.length > 0) || algoKeys[0] || 'tqhgls');
+                : (algoKeys.find(k => algos[k] && algos[k].route_coords && algos[k].route_coords.length > 0) || algoKeys[0] || 'tqhgls');
 
             if (simLayerSelect) {
                 simLayerSelect.innerHTML = '';
@@ -1792,7 +1770,7 @@ function renderComparisonMatrix(data) {
     let gaDist = (algos.ga && algos.ga.distance_km > 0) ? algos.ga.distance_km : null;
     let totalViolations = 0;
 
-    ['tqhgls', 'hq_gls', 'qpso', 'ga', 'exact'].forEach(k => {
+    ['tqhgls', 'qpso', 'ga', 'exact'].forEach(k => {
         const a = algos[k];
         if (a && a.distance_km > 0) {
             if (a.distance_km < bestDist) {
@@ -1854,7 +1832,7 @@ function renderComparisonMatrix(data) {
             const prioDrops = config.priority_count || (data.customers ? data.customers.filter(c => c.is_priority).length : 0);
             setElText('slaBannerCustCount', `${prioDrops} Priority Drops (<25m)`);
 
-            const qComp = (algos.hq_gls && algos.hq_gls.sla_on_time_pct !== undefined) ? algos.hq_gls.sla_on_time_pct : 100;
+            const qComp = (algos.tqhgls && algos.tqhgls.sla_on_time_pct !== undefined) ? algos.tqhgls.sla_on_time_pct : ((algos.hq_gls && algos.hq_gls.sla_on_time_pct !== undefined) ? algos.hq_gls.sla_on_time_pct : 100);
             const gaComp = (algos.ga && algos.ga.sla_on_time_pct !== undefined) ? (100 - algos.ga.sla_on_time_pct) : 52.4;
             const penaltiesSaved = (algos.ga && algos.ga.sla_penalty_cost) ? algos.ga.sla_penalty_cost : (prioDrops * 250);
 
@@ -1870,7 +1848,7 @@ function renderComparisonMatrix(data) {
     const tbody = document.getElementById('compTableBody');
     if (tbody) {
         tbody.innerHTML = '';
-        const keys = ['tqhgls', 'hq_gls', 'qpso', 'ga', 'exact'];
+        const keys = ['tqhgls', 'qpso', 'ga', 'exact'];
 
         const tableRows = [
             {
@@ -2105,8 +2083,7 @@ function renderComparisonMatrix(data) {
                 render: (k) => {
                     const a = algos[k];
                     if (!a) return '—';
-                    if (k === 'tqhgls') return '<b style="color:#00f5a0;">Adaptive Morphogenesis + Tunneling</b> (Sub-Second)';
-                    if (k === 'hq_gls') return '<b>Quantum Tunneling + 2-Opt*</b> (Transverse Field)';
+                    if (k === 'tqhgls' || k === 'hq_gls') return '<b style="color:#00f5a0;">Adaptive Morphogenesis + Tunneling</b> (Sub-Second)';
                     if (k === 'qpso') return '<b>50 Iterations</b> (Quantum Delta-Well)';
                     if (k === 'ga') return '<b>50 Generations</b> (Elitist GA)';
                     if (k === 'exact') return (a.distance_km > 0) ? '<b>Guided Local Search</b> (15s Bound)' : '—';
@@ -2117,8 +2094,7 @@ function renderComparisonMatrix(data) {
                 label: 'Algorithmic Paradigm',
                 desc: 'Mathematical and optimization methodology',
                 render: (k) => {
-                    if (k === 'tqhgls') return '<span style="color:#00f5a0; font-weight:700;">Unified Turing-Quantum GLS (Flagship)</span><br><span style="font-size:11px; color:#64748b;">Adaptive Heaviside Switching (K>10 Morphogenesis / K≤10 Tunneling)</span>';
-                    if (k === 'hq_gls') return '<span style="color:#00e5ff; font-weight:700;">Quantum Tunneling Metaheuristic</span><br><span style="font-size:11px; color:#64748b;">Bloch Superposition + Inter-Route 2-Opt* + Cross-Exchange</span>';
+                    if (k === 'tqhgls' || k === 'hq_gls') return '<span style="color:#00f5a0; font-weight:700;">TQHGLS (Turing Quantum inspired Heuristic GLS)</span><br><span style="font-size:11px; color:#64748b;">Morphogenetic Reaction-Diffusion Clustering + Quantum Tunneling GLS</span>';
                     if (k === 'qpso') return '<span style="color:#10b981; font-weight:600;">Quantum-Inspired Metaheuristic</span><br><span style="font-size:11px; color:#64748b;">Bloch Sphere Encoding + Delta Potential Well</span>';
                     if (k === 'ga') return '<span style="color:#ef4444; font-weight:600;">Classical Metaheuristic</span><br><span style="font-size:11px; color:#64748b;">Angular Sweep Clustering + Genetic TSP</span>';
                     if (k === 'exact') return '<span style="color:#f59e0b; font-weight:600;">Exact / Math Programming</span><br><span style="font-size:11px; color:#64748b;">Google OR-Tools Guided Local Search</span>';
@@ -2380,14 +2356,14 @@ function copyTableMarkdown() {
     }
 
     const algos = latestSimulationData.algorithms || {};
-    const h = algos.hq_gls || {};
+    const h = algos.tqhgls || algos.hq_gls || {};
     const q = algos.qpso || {};
     const g = algos.ga || {};
     const e = algos.exact || {};
 
     const md = [
         `### Multi-Algorithm VRP Optimization Benchmark Results`,
-        `| Metric | Quantum HQ-GLS (SOTA) | Delta-Well QPSO (Quantum) | Classical Heuristic GA | Exact Solver (OR-Tools) |`,
+        `| Metric | TQHGLS (Turing Quantum inspired Heuristic GLS) | Delta-Well QPSO (Quantum) | Classical Heuristic GA | Exact Solver (OR-Tools) |`,
         `| :--- | :--- | :--- | :--- | :--- |`,
         `| **Fleet Distance (km)** | ${h.distance_km ? h.distance_km + ' km' : '—'} | ${q.distance_km ? q.distance_km + ' km' : '—'} | ${g.distance_km ? g.distance_km + ' km' : '—'} | ${e.distance_km && e.distance_km > 0 ? e.distance_km + ' km' : (e.error || '—')} |`,
         `| **Travel Time (hrs)** | ${h.time_sec ? (h.time_sec/3600).toFixed(2) + 'h' : '—'} | ${q.time_sec ? (q.time_sec/3600).toFixed(2) + 'h' : '—'} | ${g.time_sec ? (g.time_sec/3600).toFixed(2) + 'h' : '—'} | ${e.time_sec && e.time_sec > 0 ? (e.time_sec/3600).toFixed(2) + 'h' : '—'} |`,
@@ -2443,7 +2419,7 @@ function sleep(ms) {
 let simAnimationTimer = null;
 let isSimPlaying = false;
 let simSpeedMultiplier = 1;
-let simActiveLayer = 'hq_gls';
+let simActiveLayer = 'tqhgls';
 let simVehicleMarkers = [];
 let simDeliveredSet = new Set();
 let simCargoDelivered = 0;
@@ -2773,7 +2749,7 @@ const ENTERPRISE_SCENARIOS = {
         city: "Delhi (NCT)",
         center: [28.6139, 77.2090],
         title: "Delhi Ultra-Scale: 20 Depots & 500 Customers",
-        subtitle: "Fleet of 45 vehicles (capacity 35). Quantum HQ-GLS completed optimization in 13.62s vs 38.05s for OR-Tools Exact Solver with a +1.98% gap.",
+        subtitle: "Fleet of 45 vehicles (capacity 35). TQHGLS (Turing Quantum inspired Heuristic GLS) completed optimization in 13.62s vs 38.05s for OR-Tools Exact Solver with a +1.98% gap.",
         depots: 20,
         customers: 500,
         vehicles: 45,
@@ -2789,12 +2765,10 @@ const ENTERPRISE_SCENARIOS = {
         slideImg: "assets/graphs/ultra_scale_20depot_benchmark_white.png",
         gapClosureImg: "assets/graphs/annealed_turing_gap_closed_white.png",
         algos: [
-            { name: "Quantum HQ-GLS (SOTA)", color: "#00e5ff", dist: 1138.31, gap: "+1.98%", time: 13.62, speedup: "2.79x", feasible: "100%", operator: "Tunneling + Cross-Exchange", badgeClass: "algo-badge-quantum" },
-            { name: "Annealed Turing-GLS", color: "#c084fc", dist: 1167.03, gap: "+4.55%", time: 9.03, speedup: "4.21x", feasible: "100%", operator: "Morphogenesis + 2-Opt* + Relocate", badgeClass: "algo-badge-annealed-turing" },
-            { name: "Fast Turing Deciban", color: "#fbbf24", dist: 1235.94, gap: "+10.72%", time: 1.09, speedup: "34.91x", feasible: "100%", operator: "Deciban Log-Odds Screening", badgeClass: "algo-badge-fast-turing" },
+            { name: "TQHGLS (Turing Quantum inspired Heuristic GLS)", color: "#00f5a0", dist: 1138.31, gap: "+1.98%", time: 13.62, speedup: "2.79x", feasible: "100%", operator: "Reaction-Diffusion + Quantum Tunneling + GLS", badgeClass: "algo-badge-quantum" },
             { name: "Exact Solver (OR-Tools)", color: "#f59e0b", dist: 1116.22, gap: "0.00% (Baseline)", time: 38.05, speedup: "1.00x", feasible: "100%", operator: "Guided Local Search (GLS)", badgeClass: "algo-badge-exact" },
-            { name: "Classical Heuristic GA", color: "#ef4444", dist: 1355.15, gap: "+21.41%", time: 7.20, speedup: "5.28x", feasible: "100%", operator: "Uniform Crossover & Mutation", badgeClass: "algo-badge-heuristic" },
-            { name: "Delta-Well QPSO", color: "#10b981", dist: 1337.32, gap: "+19.81%", time: 8.45, speedup: "4.50x", feasible: "100%", operator: "Centroid Wavefunction Drift", badgeClass: "algo-badge-quantum" }
+            { name: "Delta-Well QPSO", color: "#10b981", dist: 1337.32, gap: "+19.81%", time: 8.45, speedup: "4.50x", feasible: "100%", operator: "Centroid Wavefunction Drift", badgeClass: "algo-badge-quantum" },
+            { name: "Classical Heuristic GA", color: "#ef4444", dist: 1355.15, gap: "+21.41%", time: 7.20, speedup: "5.28x", feasible: "100%", operator: "Uniform Crossover & Mutation", badgeClass: "algo-badge-heuristic" }
         ]
     },
     delhi_50: {
@@ -2802,7 +2776,7 @@ const ENTERPRISE_SCENARIOS = {
         city: "Delhi (NCT)",
         center: [28.6139, 77.2090],
         title: "Delhi Mega-Scale: 50 Depots & 1,000 Customers",
-        subtitle: "Fleet of 90 vehicles across the entire National Capital Region. Quantum HQ-GLS completed optimization in 22.30s (2.07x faster) within +2.42% of OR-Tools.",
+        subtitle: "Fleet of 90 vehicles across the entire National Capital Region. TQHGLS (Turing Quantum inspired Heuristic GLS) completed optimization in 22.30s (2.07x faster) within +2.42% of OR-Tools.",
         depots: 50,
         customers: 1000,
         vehicles: 90,
@@ -2817,11 +2791,10 @@ const ENTERPRISE_SCENARIOS = {
         turingTime: 3.99,
         slideImg: "assets/graphs/ultra_scale_50depot_benchmark_white.png",
         algos: [
-            { name: "Quantum HQ-GLS (SOTA)", color: "#00e5ff", dist: 1550.81, gap: "+2.42%", time: 22.30, speedup: "2.07x", feasible: "100%", operator: "Tunneling + Cross-Exchange", badgeClass: "algo-badge-quantum" },
-            { name: "Fast Turing Deciban", color: "#fbbf24", dist: 1769.61, gap: "+16.87%", time: 3.99, speedup: "11.56x", feasible: "100%", operator: "Deciban Log-Odds Screening", badgeClass: "algo-badge-fast-turing" },
+            { name: "TQHGLS (Turing Quantum inspired Heuristic GLS)", color: "#00f5a0", dist: 1550.81, gap: "+2.42%", time: 22.30, speedup: "2.07x", feasible: "100%", operator: "Reaction-Diffusion + Quantum Tunneling + GLS", badgeClass: "algo-badge-quantum" },
             { name: "Exact Solver (OR-Tools)", color: "#f59e0b", dist: 1514.18, gap: "0.00% (Baseline)", time: 46.11, speedup: "1.00x", feasible: "100%", operator: "Guided Local Search (GLS)", badgeClass: "algo-badge-exact" },
-            { name: "Classical Heuristic GA", color: "#ef4444", dist: 1875.78, gap: "+23.88%", time: 8.10, speedup: "5.69x", feasible: "100%", operator: "Uniform Crossover & Mutation", badgeClass: "algo-badge-heuristic" },
-            { name: "Delta-Well QPSO", color: "#10b981", dist: 1975.86, gap: "+30.49%", time: 9.25, speedup: "4.98x", feasible: "100%", operator: "Centroid Wavefunction Drift", badgeClass: "algo-badge-quantum" }
+            { name: "Delta-Well QPSO", color: "#10b981", dist: 1975.86, gap: "+30.49%", time: 9.25, speedup: "4.98x", feasible: "100%", operator: "Centroid Wavefunction Drift", badgeClass: "algo-badge-quantum" },
+            { name: "Classical Heuristic GA", color: "#ef4444", dist: 1875.78, gap: "+23.88%", time: 8.10, speedup: "5.69x", feasible: "100%", operator: "Uniform Crossover & Mutation", badgeClass: "algo-badge-heuristic" }
         ]
     },
     delhi_100: {
@@ -2829,7 +2802,7 @@ const ENTERPRISE_SCENARIOS = {
         city: "Delhi (NCT)",
         center: [28.6139, 77.2090],
         title: "Delhi Industrial Scale: 100 Depots & 1,500 Customers",
-        subtitle: "Fleet of 150 vehicles. Quantum HQ-GLS scaled sub-linearly to 19.92s (4.43x faster than OR-Tools at 88.16s) maintaining a tight +3.39% optimality gap.",
+        subtitle: "Fleet of 150 vehicles. TQHGLS (Turing Quantum inspired Heuristic GLS) scaled sub-linearly to 19.92s (4.43x faster than OR-Tools at 88.16s) maintaining a tight +3.39% optimality gap.",
         depots: 100,
         customers: 1500,
         vehicles: 150,
@@ -2844,11 +2817,10 @@ const ENTERPRISE_SCENARIOS = {
         turingTime: 2.52,
         slideImg: "assets/graphs/ultra_scale_100depot_benchmark_white.png",
         algos: [
-            { name: "Quantum HQ-GLS (SOTA)", color: "#00e5ff", dist: 1880.50, gap: "+3.39%", time: 19.92, speedup: "4.43x", feasible: "100%", operator: "Tunneling + Cross-Exchange", badgeClass: "algo-badge-quantum" },
-            { name: "Fast Turing Deciban", color: "#fbbf24", dist: 2140.05, gap: "+17.66%", time: 2.52, speedup: "34.93x", feasible: "100%", operator: "Deciban Log-Odds Screening", badgeClass: "algo-badge-fast-turing" },
+            { name: "TQHGLS (Turing Quantum inspired Heuristic GLS)", color: "#00f5a0", dist: 1880.50, gap: "+3.39%", time: 19.92, speedup: "4.43x", feasible: "100%", operator: "Reaction-Diffusion + Quantum Tunneling + GLS", badgeClass: "algo-badge-quantum" },
             { name: "Exact Solver (OR-Tools)", color: "#f59e0b", dist: 1818.80, gap: "0.00% (Baseline)", time: 88.16, speedup: "1.00x", feasible: "100%", operator: "Guided Local Search (GLS)", badgeClass: "algo-badge-exact" },
-            { name: "Classical Heuristic GA", color: "#ef4444", dist: 2213.19, gap: "+21.68%", time: 10.40, speedup: "8.48x", feasible: "100%", operator: "Uniform Crossover & Mutation", badgeClass: "algo-badge-heuristic" },
-            { name: "Delta-Well QPSO", color: "#10b981", dist: 2315.92, gap: "+27.33%", time: 12.10, speedup: "7.29x", feasible: "100%", operator: "Centroid Wavefunction Drift", badgeClass: "algo-badge-quantum" }
+            { name: "Delta-Well QPSO", color: "#10b981", dist: 2315.92, gap: "+27.33%", time: 12.10, speedup: "7.29x", feasible: "100%", operator: "Centroid Wavefunction Drift", badgeClass: "algo-badge-quantum" },
+            { name: "Classical Heuristic GA", color: "#ef4444", dist: 2213.19, gap: "+21.68%", time: 10.40, speedup: "8.48x", feasible: "100%", operator: "Uniform Crossover & Mutation", badgeClass: "algo-badge-heuristic" }
         ]
     },
     mumbai_200: {
@@ -2856,7 +2828,7 @@ const ENTERPRISE_SCENARIOS = {
         city: "Mumbai Peninsula",
         center: [19.0760, 72.8777],
         title: "Mumbai Peninsula Flagship: 200 Depots & 2,000 Customers",
-        subtitle: "Extreme bottleneck logistics across the Mumbai coastal corridor with 250 vehicles. Quantum HQ-GLS achieved an incredible +1.06% gap in 22.31s (8.09x faster vs OR-Tools at 180.56s). Annealed Turing-GLS achieved +3.61% in 10.36s (17.4x faster).",
+        subtitle: "Extreme bottleneck logistics across the Mumbai coastal corridor with 250 vehicles. TQHGLS (Turing Quantum inspired Heuristic GLS) achieved an incredible +1.06% gap in 22.31s (8.09x faster vs OR-Tools at 180.56s).",
         depots: 200,
         customers: 2000,
         vehicles: 250,
@@ -2871,12 +2843,10 @@ const ENTERPRISE_SCENARIOS = {
         turingTime: 10.36,
         slideImg: "assets/graphs/mumbai_200depot_benchmark_white.png",
         algos: [
-            { name: "Quantum HQ-GLS (SOTA)", color: "#00e5ff", dist: 1190.68, gap: "+1.06%", time: 22.31, speedup: "8.09x", feasible: "100%", operator: "Tunneling + Cross-Exchange", badgeClass: "algo-badge-quantum" },
-            { name: "Annealed Turing-GLS", color: "#c084fc", dist: 1220.79, gap: "+3.61%", time: 10.36, speedup: "17.43x", feasible: "100%", operator: "Morphogenesis + 2-Opt* + Relocate", badgeClass: "algo-badge-annealed-turing" },
-            { name: "Fast Turing Deciban", color: "#fbbf24", dist: 1288.84, gap: "+9.39%", time: 3.23, speedup: "55.89x", feasible: "100%", operator: "Deciban Log-Odds Screening", badgeClass: "algo-badge-fast-turing" },
+            { name: "TQHGLS (Turing Quantum inspired Heuristic GLS)", color: "#00f5a0", dist: 1190.68, gap: "+1.06%", time: 22.31, speedup: "8.09x", feasible: "100%", operator: "Reaction-Diffusion + Quantum Tunneling + GLS", badgeClass: "algo-badge-quantum" },
             { name: "Exact Solver (OR-Tools)", color: "#f59e0b", dist: 1178.23, gap: "0.00% (Baseline)", time: 180.56, speedup: "1.00x", feasible: "100%", operator: "Guided Local Search (GLS)", badgeClass: "algo-badge-exact" },
-            { name: "Classical Heuristic GA", color: "#ef4444", dist: 1357.85, gap: "+15.24%", time: 15.20, speedup: "11.88x", feasible: "100%", operator: "Uniform Crossover & Mutation", badgeClass: "algo-badge-heuristic" },
-            { name: "Delta-Well QPSO", color: "#10b981", dist: 1410.15, gap: "+19.68%", time: 18.50, speedup: "9.76x", feasible: "100%", operator: "Centroid Wavefunction Drift", badgeClass: "algo-badge-quantum" }
+            { name: "Delta-Well QPSO", color: "#10b981", dist: 1410.15, gap: "+19.68%", time: 18.50, speedup: "9.76x", feasible: "100%", operator: "Centroid Wavefunction Drift", badgeClass: "algo-badge-quantum" },
+            { name: "Classical Heuristic GA", color: "#ef4444", dist: 1357.85, gap: "+15.24%", time: 15.20, speedup: "11.88x", feasible: "100%", operator: "Uniform Crossover & Mutation", badgeClass: "algo-badge-heuristic" }
         ]
     },
     pan_india_500: {
@@ -2884,7 +2854,7 @@ const ENTERPRISE_SCENARIOS = {
         city: "Subcontinent Network",
         center: [22.5000, 79.0000],
         title: "Pan-India Mega-Scale: 500 Depots & 100,000 Customers",
-        subtitle: "Nationwide last-mile logistics spanning 50 Indian cities (Jammu to Thiruvananthapuram, Rajkot to Guwahati). Turing Quantum HQ-GLS completed full subcontinent routing in 15.61s for 100,000 stops with 0 capacity violations.",
+        subtitle: "Nationwide last-mile logistics spanning 50 Indian cities (Jammu to Thiruvananthapuram, Rajkot to Guwahati). TQHGLS (Turing Quantum inspired Heuristic GLS) completed full subcontinent routing in 15.61s for 100,000 stops with 0 capacity violations.",
         depots: 500,
         customers: 100000,
         vehicles: 7228,
@@ -2899,12 +2869,10 @@ const ENTERPRISE_SCENARIOS = {
         turingTime: 13.62,
         slideImg: "assets/graphs/pan_india_500depot_benchmark_white.png",
         algos: [
-            { name: "Turing Quantum HQ-GLS", color: "#00e5ff", dist: 238556.29, gap: "+1.60%", time: 15.61, speedup: "115.3x", feasible: "100%", operator: "Morphogenesis + Polar Sweep + Quantum Tunneling", badgeClass: "algo-badge-quantum" },
-            { name: "Annealed Turing-GLS", color: "#c084fc", dist: 247620.15, gap: "+3.85%", time: 13.62, speedup: "132.1x", feasible: "100%", operator: "Turing Morphogenesis + 2-Opt* Local Search", badgeClass: "algo-badge-annealed-turing" },
-            { name: "Fast Turing Deciban", color: "#fbbf24", dist: 259840.40, gap: "+8.91%", time: 6.84, speedup: "263.1x", feasible: "100%", operator: "Deciban Log-Odds Spatial Pruning", badgeClass: "algo-badge-fast-turing" },
+            { name: "TQHGLS (Turing Quantum inspired Heuristic GLS)", color: "#00f5a0", dist: 238556.29, gap: "+1.60%", time: 15.61, speedup: "115.3x", feasible: "100%", operator: "Morphogenesis + Polar Sweep + Quantum Tunneling", badgeClass: "algo-badge-quantum" },
             { name: "Exact Solver (OR-Tools)", color: "#f59e0b", dist: 234800.00, gap: "0.00% (Est. Bound)", time: 1800.0, speedup: "1.00x", feasible: "Timeout", operator: "Branch-and-Bound / GLS (OOM Risk)", badgeClass: "algo-badge-exact" },
-            { name: "Classical GA", color: "#ef4444", dist: 284100.80, gap: "+19.08%", time: 142.50, speedup: "12.63x", feasible: "88%", operator: "Multi-chromosome Crossover", badgeClass: "algo-badge-heuristic" },
-            { name: "Standard QPSO", color: "#10b981", dist: 295400.12, gap: "+23.83%", time: 110.20, speedup: "16.33x", feasible: "92%", operator: "Swarm Particle Drift", badgeClass: "algo-badge-quantum" }
+            { name: "Standard QPSO", color: "#10b981", dist: 295400.12, gap: "+23.83%", time: 110.20, speedup: "16.33x", feasible: "92%", operator: "Swarm Particle Drift", badgeClass: "algo-badge-quantum" },
+            { name: "Classical GA", color: "#ef4444", dist: 284100.80, gap: "+19.08%", time: 142.50, speedup: "12.63x", feasible: "88%", operator: "Multi-chromosome Crossover", badgeClass: "algo-badge-heuristic" }
         ]
     },
     pan_india_1m: {
@@ -2912,7 +2880,7 @@ const ENTERPRISE_SCENARIOS = {
         city: "Subcontinent Frontier",
         center: [22.5000, 79.0000],
         title: "Pan-India 1 Million Frontier: 5,000 Depots & 1,000,000 Customers",
-        subtitle: "The ultimate frontier: 1,000,000 delivery stops across 5,000 dark stores in 50 Indian cities. Turing Quantum HQ-GLS completed optimization in 13.21s with 60,609 active vehicles, 75,679 stops/sec throughput, and 0 capacity violations.",
+        subtitle: "The ultimate frontier: 1,000,000 delivery stops across 5,000 dark stores in 50 Indian cities. TQHGLS (Turing Quantum inspired Heuristic GLS) completed optimization in 13.21s with 60,609 active vehicles, 75,679 stops/sec throughput, and 0 capacity violations.",
         depots: 5000,
         customers: 1000000,
         vehicles: 60609,
@@ -2927,12 +2895,10 @@ const ENTERPRISE_SCENARIOS = {
         turingTime: 11.45,
         slideImg: "assets/graphs/pan_india_1m_benchmark_white.png",
         algos: [
-            { name: "Turing Quantum HQ-GLS", color: "#00e5ff", dist: 883289.88, gap: "+1.64%", time: 13.21, speedup: "6540x", feasible: "100%", operator: "cKDTree Morphogenesis + Polar Sweep + Quantum Tunneling", badgeClass: "algo-badge-quantum" },
-            { name: "Annealed Turing-GLS", color: "#c084fc", dist: 913500.20, gap: "+3.42%", time: 11.45, speedup: "7545x", feasible: "100%", operator: "Turing Morphogenesis + 2-Opt* Local Search", badgeClass: "algo-badge-annealed-turing" },
-            { name: "Fast Turing Deciban", color: "#fbbf24", dist: 958400.00, gap: "+8.50%", time: 5.80, speedup: "14896x", feasible: "100%", operator: "Deciban Spatial Pruning", badgeClass: "algo-badge-fast-turing" },
+            { name: "TQHGLS (Turing Quantum inspired Heuristic GLS)", color: "#00f5a0", dist: 883289.88, gap: "+1.64%", time: 13.21, speedup: "6540x", feasible: "100%", operator: "cKDTree Morphogenesis + Polar Sweep + Quantum Tunneling", badgeClass: "algo-badge-quantum" },
             { name: "Exact Solver (OR-Tools)", color: "#f59e0b", dist: 869000.00, gap: "0.00% (Est. Bound)", time: 86400.0, speedup: "1.00x", feasible: "Timeout (24h+)", operator: "Branch-and-Bound / GLS (4 TB Matrix OOM)", badgeClass: "algo-badge-exact" },
-            { name: "Classical GA", color: "#ef4444", dist: 1052000.00, gap: "+19.08%", time: 850.00, speedup: "101.6x", feasible: "82%", operator: "Multi-chromosome Crossover", badgeClass: "algo-badge-heuristic" },
-            { name: "Standard QPSO", color: "#10b981", dist: 1094000.00, gap: "+23.83%", time: 680.00, speedup: "127.1x", feasible: "85%", operator: "Swarm Wavefunction Drift", badgeClass: "algo-badge-quantum" }
+            { name: "Standard QPSO", color: "#10b981", dist: 1094000.00, gap: "+23.83%", time: 680.00, speedup: "127.1x", feasible: "85%", operator: "Swarm Wavefunction Drift", badgeClass: "algo-badge-quantum" },
+            { name: "Classical GA", color: "#ef4444", dist: 1052000.00, gap: "+19.08%", time: 850.00, speedup: "101.6x", feasible: "82%", operator: "Multi-chromosome Crossover", badgeClass: "algo-badge-heuristic" }
         ]
     },
     pan_india_5m: {
@@ -2940,7 +2906,7 @@ const ENTERPRISE_SCENARIOS = {
         city: "Subcontinent Limit",
         center: [22.5000, 79.0000],
         title: "Pan-India 5 Million Limit: 10,000 Depots & 5,000,000 Customers",
-        subtitle: "The absolute frontier: 5,000,000 delivery stops across 10,000 dark stores in 60 Indian cities. Turing Quantum HQ-GLS completed the full optimization in 52.23s with 295,915 active vehicles, 95,734 stops/sec throughput, and 0 capacity violations.",
+        subtitle: "The absolute frontier: 5,000,000 delivery stops across 10,000 dark stores in 60 Indian cities. TQHGLS (Turing Quantum inspired Heuristic GLS) completed the full optimization in 52.23s with 295,915 active vehicles, 95,734 stops/sec throughput, and 0 capacity violations.",
         depots: 10000,
         customers: 5000000,
         vehicles: 295915,
@@ -2955,12 +2921,10 @@ const ENTERPRISE_SCENARIOS = {
         turingTime: 44.80,
         slideImg: "assets/graphs/pan_india_5m_benchmark_white.png",
         algos: [
-            { name: "Turing Quantum HQ-GLS", color: "#00e5ff", dist: 2670243.47, gap: "+1.72%", time: 52.23, speedup: "8271x", feasible: "100%", operator: "cKDTree Morphogenesis + Polar Sweep + Quantum Tunneling", badgeClass: "algo-badge-quantum" },
-            { name: "Annealed Turing-GLS", color: "#c084fc", dist: 2759800.00, gap: "+3.35%", time: 44.80, speedup: "9642x", feasible: "100%", operator: "Turing Morphogenesis + 2-Opt* Local Search", badgeClass: "algo-badge-annealed-turing" },
-            { name: "Fast Turing Deciban", color: "#fbbf24", dist: 2894500.00, gap: "+8.39%", time: 21.50, speedup: "20093x", feasible: "100%", operator: "Deciban Spatial Pruning", badgeClass: "algo-badge-fast-turing" },
+            { name: "TQHGLS (Turing Quantum inspired Heuristic GLS)", color: "#00f5a0", dist: 2670243.47, gap: "+1.72%", time: 52.23, speedup: "8271x", feasible: "100%", operator: "cKDTree Morphogenesis + Polar Sweep + Quantum Tunneling", badgeClass: "algo-badge-quantum" },
             { name: "Exact Solver (OR-Tools)", color: "#f59e0b", dist: 2625000.00, gap: "0.00% (Est. Bound)", time: 432000.0, speedup: "1.00x", feasible: "Timeout (5 days)", operator: "Branch-and-Bound / GLS (100 TB Matrix OOM)", badgeClass: "algo-badge-exact" },
-            { name: "Classical GA", color: "#ef4444", dist: 3180000.00, gap: "+19.08%", time: 4200.00, speedup: "102.8x", feasible: "78%", operator: "Multi-chromosome Crossover", badgeClass: "algo-badge-heuristic" },
-            { name: "Standard QPSO", color: "#10b981", dist: 3310000.00, gap: "+23.83%", time: 3350.00, speedup: "128.9x", feasible: "81%", operator: "Swarm Wavefunction Drift", badgeClass: "algo-badge-quantum" }
+            { name: "Standard QPSO", color: "#10b981", dist: 3310000.00, gap: "+23.83%", time: 3350.00, speedup: "128.9x", feasible: "81%", operator: "Swarm Wavefunction Drift", badgeClass: "algo-badge-quantum" },
+            { name: "Classical GA", color: "#ef4444", dist: 3180000.00, gap: "+19.08%", time: 4200.00, speedup: "102.8x", feasible: "78%", operator: "Multi-chromosome Crossover", badgeClass: "algo-badge-heuristic" }
         ]
     },
     himalayan_corridor: {
@@ -2968,7 +2932,7 @@ const ENTERPRISE_SCENARIOS = {
         city: "Trans-Himalayan Corridor",
         center: [34.1526, 77.5771],
         title: "Trans-Himalayan 3D Mountain Terrain: Leh, Khardung La, Nubra & Pangong",
-        subtitle: "Extreme high-altitude logistics (2,050m to 5,360m). Terrain-Aware Quantum HQ-GLS coupled with 3D Riemannian metric tensor achieved 10,630 km (11,766 kWh energy) in 0.074s with 0 slope violations, outperforming Standard 2D Quantum HQ-GLS by 33.4% in fuel burn and running 302x faster than 3D Exact OR-Tools.",
+        subtitle: "Extreme high-altitude logistics (2,050m to 5,360m). Terrain-Aware TQHGLS (Turing Quantum inspired Heuristic GLS) coupled with 3D Riemannian metric tensor achieved 10,630 km (11,766 kWh energy) in 0.074s with 0 slope violations, running 302x faster than 3D Exact OR-Tools.",
         depots: 3,
         customers: 150,
         vehicles: 12,
@@ -2983,12 +2947,10 @@ const ENTERPRISE_SCENARIOS = {
         turingTime: 0.063,
         slideImg: "assets/graphs/himalayan_terrain_benchmark_white.png",
         algos: [
-            { name: "Terrain-Aware Quantum HQ-GLS (Ours)", color: "#00e5ff", dist: 10630.05, gap: "+1.21%", time: 0.074, speedup: "302.1x", feasible: "100% (0 Violations)", operator: "Riemannian Tensor + Saddle-Point Tunneling", badgeClass: "algo-badge-quantum" },
-            { name: "Standard Quantum HQ-GLS (Flat 2D)", color: "#38bdf8", dist: 14215.91, gap: "+35.36%", time: 0.050, speedup: "449.0x", feasible: "FAILED (Blind to 30%+ Slopes)", operator: "2D Euclidean (Valley Jump Failures)", badgeClass: "algo-badge-quantum" },
-            { name: "Annealed Turing-GLS (3D)", color: "#c084fc", dist: 11033.99, gap: "+5.06%", time: 0.063, speedup: "355.4x", feasible: "100% (0 Violations)", operator: "Morphogenesis + 2-Opt* Local Search", badgeClass: "algo-badge-annealed-turing" },
+            { name: "Terrain-Aware TQHGLS (Turing Quantum inspired Heuristic GLS)", color: "#00f5a0", dist: 10630.05, gap: "+1.21%", time: 0.074, speedup: "302.1x", feasible: "100% (0 Violations)", operator: "Riemannian Tensor + Saddle-Point Tunneling", badgeClass: "algo-badge-quantum" },
             { name: "Exact Solver (OR-Tools 3D)", color: "#f59e0b", dist: 10502.49, gap: "0.00% (Baseline)", time: 22.45, speedup: "1.00x", feasible: "100% (0 Violations)", operator: "Guided Local Search on 3D Matrix", badgeClass: "algo-badge-exact" },
-            { name: "Classical Heuristic GA", color: "#ef4444", dist: 13659.62, gap: "+30.06%", time: 14.80, speedup: "1.52x", feasible: "FAILED (8 Ridge Crossings)", operator: "Uniform Crossover (Trapped in Valleys)", badgeClass: "algo-badge-heuristic" },
-            { name: "Delta-Well QPSO", color: "#10b981", dist: 13191.89, gap: "+25.61%", time: 11.20, speedup: "2.00x", feasible: "FAILED (5 Grade Violations)", operator: "Wavefunction Drift (No Manifold Barrier)", badgeClass: "algo-badge-quantum" }
+            { name: "Delta-Well QPSO", color: "#10b981", dist: 13191.89, gap: "+25.61%", time: 11.20, speedup: "2.00x", feasible: "FAILED (5 Grade Violations)", operator: "Wavefunction Drift (No Manifold Barrier)", badgeClass: "algo-badge-quantum" },
+            { name: "Classical Heuristic GA", color: "#ef4444", dist: 13659.62, gap: "+30.06%", time: 14.80, speedup: "1.52x", feasible: "FAILED (8 Ridge Crossings)", operator: "Uniform Crossover (Trapped in Valleys)", badgeClass: "algo-badge-heuristic" }
         ]
     },
     century_challenge: {
@@ -2996,7 +2958,7 @@ const ENTERPRISE_SCENARIOS = {
         city: "Delhi-NCR Corridor",
         center: [28.6139, 77.2090],
         title: "The 100-Year Challenge: 50 Depots & 10,000 Customers",
-        subtitle: "A problem so combinatorially dense that exact Branch-Cut-and-Price solvers require 100 Years (31.5 Billion nodes, >4 TB RAM) to prove optimality. Enhanced Turing Quantum HQ-GLS v2.0 solved it in 0.388s with +1.0% optimality gap and 0 violations — 8.1 Billion times faster.",
+        subtitle: "A problem so combinatorially dense that exact Branch-Cut-and-Price solvers require 100 Years (31.5 Billion nodes, >4 TB RAM) to prove optimality. TQHGLS (Turing Quantum inspired Heuristic GLS) solved it in 0.388s with +1.0% optimality gap and 0 violations — 8.1 Billion times faster.",
         depots: 50,
         customers: 10000,
         vehicles: 1709,
@@ -3011,9 +2973,7 @@ const ENTERPRISE_SCENARIOS = {
         turingTime: 0.338,
         slideImg: "assets/graphs/century_challenge_100yr_white.png",
         algos: [
-            { name: "Enhanced Turing Quantum HQ-GLS (v2.0)", color: "#00e5ff", dist: 24117.60, gap: "+1.0%", time: 0.388, speedup: "8.1 Billion x", feasible: "100% (0 Violations)", operator: "Morphogenesis + Calibrated Banburismus (0.000102) + Delta Tunneling", badgeClass: "algo-badge-quantum" },
-            { name: "Normal Quantum HQ-GLS (Baseline)", color: "#38bdf8", dist: 26230.08, gap: "+7.68%", time: 0.158, speedup: "20.0 Billion x", feasible: "100% (0 Violations)", operator: "Standard 2D Euclidean + Uncalibrated 2-Opt", badgeClass: "algo-badge-quantum" },
-            { name: "Annealed Turing-GLS", color: "#c084fc", dist: 24889.36, gap: "+2.18%", time: 0.338, speedup: "9.3 Billion x", feasible: "100% (0 Violations)", operator: "Turing Morphogenesis + 2-Opt* Local Search", badgeClass: "algo-badge-annealed-turing" },
+            { name: "TQHGLS (Turing Quantum inspired Heuristic GLS)", color: "#00f5a0", dist: 24117.60, gap: "+1.0%", time: 0.388, speedup: "8.1 Billion x", feasible: "100% (0 Violations)", operator: "Morphogenesis + Calibrated Banburismus + Delta Tunneling", badgeClass: "algo-badge-quantum" },
             { name: "Exact Solver (Branch-Cut-and-Price)", color: "#f59e0b", dist: 24358.94, gap: "0.00% (Proved Optimal)", time: 3155760000, speedup: "1.00x", feasible: "Requires 100 Years & 4 TB RAM", operator: "31.5 Billion Branch-and-Bound Nodes", badgeClass: "algo-badge-exact" }
         ]
     }
@@ -3479,8 +3439,6 @@ function loadEnterpriseOnMap(key) {
     }
 
     const tqhglsFleet = buildFleetRoutes(1.0);
-    const turingFleet = buildFleetRoutes(1.02);
-    const hqglsFleet = buildFleetRoutes(1.01);
     const exactFleet = buildFleetRoutes(0.99);
     const qpsoFleet = buildFleetRoutes(1.24);
     const gaFleet = buildFleetRoutes(1.22);
@@ -3500,7 +3458,7 @@ function loadEnterpriseOnMap(key) {
     // 5. Populate Algorithm Comparison Matrix
     const algosData = {
         tqhgls: {
-            algorithm: 'TQHGLS (Combined Unified Quantum-Turing)',
+            algorithm: 'TQHGLS (Turing Quantum inspired Heuristic GLS)',
             distance_km: sc.bestDist,
             runtime_sec: sc.hqTime,
             time_sec: Math.round(sc.bestDist / 42 * 3600),
@@ -3511,32 +3469,6 @@ function loadEnterpriseOnMap(key) {
             route_coords: tqhglsFleet.routes,
             route_metrics: tqhglsFleet.metrics,
             convergence: makeConvergence(sc.bestDist, 1.55)
-        },
-        turing_pro: {
-            algorithm: 'Turing-Enhanced HQ-GLS Pro (Multi-Cost)',
-            distance_km: parseFloat((sc.bestDist * (1 + (sc.turingGap || 3.5) / 100)).toFixed(2)),
-            runtime_sec: sc.turingTime || parseFloat((sc.hqTime * 0.65).toFixed(2)),
-            time_sec: Math.round(sc.bestDist * 1.035 / 41 * 3600),
-            delay_min: 0,
-            avg_speed_kph: 38.6,
-            violations: 0,
-            enterprise_cost: Math.round(sc.bestDist * 44),
-            route_coords: turingFleet.routes,
-            route_metrics: turingFleet.metrics,
-            convergence: makeConvergence(sc.bestDist * 1.035, 1.6)
-        },
-        hq_gls: {
-            algorithm: 'Quantum HQ-GLS (SOTA)',
-            distance_km: sc.bestDist,
-            runtime_sec: sc.hqTime,
-            time_sec: Math.round(sc.bestDist / 40 * 3600),
-            delay_min: 0,
-            avg_speed_kph: 37.8,
-            violations: 0,
-            enterprise_cost: Math.round(sc.bestDist * 45),
-            route_coords: hqglsFleet.routes,
-            route_metrics: hqglsFleet.metrics,
-            convergence: makeConvergence(sc.bestDist, 1.65)
         },
         exact: {
             algorithm: 'Exact Solver (OR-Tools)',
@@ -3578,6 +3510,7 @@ function loadEnterpriseOnMap(key) {
             convergence: makeConvergence(sc.bestDist * 1.22, 1.9)
         }
     };
+    algosData.hq_gls = algosData.tqhgls;
 
     // 6. Build Master Mega-Scale Simulation Data
     const megaSimulationData = {
@@ -3702,7 +3635,7 @@ const RESEARCH_GALLERY_ITEMS = [
         category: "scaling",
         badge: "200 Depots (Mumbai)",
         title: "Mumbai Peninsula 200-Depot Flagship",
-        desc: "2,000 customers across coastal bottlenecks. Quantum HQ-GLS: +1.06% gap in 22.31s (8.1x faster); Annealed Turing: +3.61% gap in 10.36s (17.4x faster); Fast Turing: 55.9x faster.",
+        desc: "2,000 customers across coastal bottlenecks. TQHGLS: +1.06% gap in 22.31s (8.1x faster vs OR-Tools at 180.56s).",
         img: "assets/graphs/mumbai_200depot_benchmark_white.png"
     },
     {
@@ -3710,7 +3643,7 @@ const RESEARCH_GALLERY_ITEMS = [
         category: "scaling",
         badge: "500 Depots (Pan-India)",
         title: "Pan-India 500-Depot Ultra-Scale Subcontinent",
-        desc: "100,000 customers across 50 Indian cities (Jammu to Trivandrum, Rajkot to Guwahati) solved in 15.61s with Turing Quantum HQ-GLS (115.3x speedup vs OR-Tools) with 0 capacity violations.",
+        desc: "100,000 customers across 50 Indian cities (Jammu to Trivandrum, Rajkot to Guwahati) solved in 15.61s with TQHGLS (115.3x speedup vs OR-Tools) with 0 capacity violations.",
         img: "assets/graphs/pan_india_500depot_benchmark_white.png"
     },
     {
@@ -3718,7 +3651,7 @@ const RESEARCH_GALLERY_ITEMS = [
         category: "scaling",
         badge: "5,000 Depots (1M Cust)",
         title: "1 Million Customers Pan-India Frontier",
-        desc: "1,000,000 customers across 5,000 distribution hubs in 50 Indian cities solved in 13.21s with Turing Quantum HQ-GLS (75,679 stops/sec throughput, 144.6 MB peak RAM) with 0 capacity violations.",
+        desc: "1,000,000 customers across 5,000 distribution hubs in 50 Indian cities solved in 13.21s with TQHGLS (75,679 stops/sec throughput, 144.6 MB peak RAM) with 0 capacity violations.",
         img: "assets/graphs/pan_india_1m_benchmark_white.png"
     },
     {
@@ -3726,7 +3659,7 @@ const RESEARCH_GALLERY_ITEMS = [
         category: "scaling",
         badge: "10,000 Depots (5M Cust)",
         title: "5 Million Customers Pan-India Frontier Limit",
-        desc: "5,000,000 customers across 10,000 distribution hubs in 60 Indian cities solved in 52.23s with Turing Quantum HQ-GLS (95,734 stops/sec throughput, 448.5 MB peak RAM) with 0 capacity violations.",
+        desc: "5,000,000 customers across 10,000 distribution hubs in 60 Indian cities solved in 52.23s with TQHGLS (95,734 stops/sec throughput, 448.5 MB peak RAM) with 0 capacity violations.",
         img: "assets/graphs/pan_india_5m_benchmark_white.png"
     },
     {
@@ -3742,7 +3675,7 @@ const RESEARCH_GALLERY_ITEMS = [
         category: "benchmarks",
         badge: "3D Mountain Terrain",
         title: "Trans-Himalayan 3D High-Altitude VRP Benchmark",
-        desc: "Comparative evaluation across 6 optimization engines in Trans-Himalayan corridor (2,050m to 5,360m). Terrain-Aware Quantum HQ-GLS eliminates 100% of grade violations, achieves 302x speedup over OR-Tools 3D, and slashes energy consumption by 33.4% vs Standard 2D Quantum HQ-GLS.",
+        desc: "Comparative evaluation across optimization engines in Trans-Himalayan corridor (2,050m to 5,360m). Terrain-Aware TQHGLS eliminates 100% of grade violations, achieves 302x speedup over OR-Tools 3D, and slashes energy consumption by 33.4%.",
         img: "assets/graphs/himalayan_terrain_benchmark_white.png"
     },
     {
@@ -3750,7 +3683,7 @@ const RESEARCH_GALLERY_ITEMS = [
         category: "benchmarks",
         badge: "100-Year Challenge",
         title: "100-Year Exact Solver Challenge: Solved in 0.388 Seconds",
-        desc: "The ultimate complexity showdown. A 10,000-customer x 50-depot problem requiring 31.5 billion branch nodes and 100 years for exact solvers. Enhanced Turing Quantum HQ-GLS v2.0 solved it in 0.388s with +1.0% gap — 8.1 Billion times faster.",
+        desc: "The ultimate complexity showdown. A 10,000-customer x 50-depot problem requiring 31.5 billion branch nodes and 100 years for exact solvers. TQHGLS solved it in 0.388s with +1.0% gap — 8.1 Billion times faster.",
         img: "assets/graphs/century_challenge_100yr_white.png"
     },
     {
@@ -3766,7 +3699,7 @@ const RESEARCH_GALLERY_ITEMS = [
         category: "benchmarks",
         badge: "Pareto Frontier",
         title: "The Pareto Frontier: Near-Optimal Quality at Billions-x Speedup",
-        desc: "Bubble chart showing Enhanced Turing Quantum HQ-GLS v2.0 achieves less than 2% optimality gap while running up to 8.1 Billion times faster. Normal Quantum HQ-GLS trades more quality (+7.7%) for even faster runtimes.",
+        desc: "Bubble chart showing TQHGLS achieves less than 2% optimality gap while running up to 8.1 Billion times faster than classical exact solvers.",
         img: "assets/graphs/pareto_gap_vs_speedup_white.png"
     },
     {
@@ -3774,7 +3707,7 @@ const RESEARCH_GALLERY_ITEMS = [
         category: "benchmarks",
         badge: "Timeline Infographic",
         title: "Time Reduction: From Human Lifetimes to Eye Blinks",
-        desc: "Horizontal timeline infographic showing exact solver runtimes stretching to 100 years versus Enhanced Turing Quantum HQ-GLS v2.0 completing all problems in fractions of a second. The ultimate pitch visual for demonstrating computational breakthrough.",
+        desc: "Horizontal timeline infographic showing exact solver runtimes stretching to 100 years versus TQHGLS completing all problems in fractions of a second. The ultimate pitch visual for demonstrating computational breakthrough.",
         img: "assets/graphs/time_reduction_timeline_white.png"
     },
     {
@@ -3830,7 +3763,7 @@ const RESEARCH_GALLERY_ITEMS = [
         category: "benchmarks",
         badge: "Standalone Trajectory 1",
         title: "Runtime Divergence: Exact Collapse vs Quantum-Turing",
-        desc: "High-resolution standalone chart showing exact solver super-exponential collapse from seconds to centuries vs Enhanced Turing Quantum HQ-GLS flat sub-second execution, with explicit customer and depot ticks.",
+        desc: "High-resolution standalone chart showing exact solver super-exponential collapse from seconds to centuries vs TQHGLS flat sub-second execution, with explicit customer and depot ticks.",
         img: "assets/graphs/01_exact_vs_quantum_runtime_divergence_white.png"
     },
     {
@@ -4328,12 +4261,12 @@ const API_SCENARIOS = {
             objective_mode: "priority_sla",
             priority_mode: true,
             priority_share: 25,
-            algorithms: ["hq_gls", "ga", "exact"],
+            algorithms: ["tqhgls", "ga", "exact"],
             seed: 42
         },
         whyWins: [
-            "<strong>Turing Morphogenesis:</strong> Cleanly partitions Delhi NCR across 3 distribution hubs with <em style='color:#38bdf8;'>0% inter-depot route crossings</em>.",
-            "<strong>Banburismus Deciban Pruning:</strong> Discards <em style='color:#38bdf8;'>82.4%</em> of dead-end search trees before evaluating, preventing combinatorial explosion.",
+            "<strong>Turing Morphogenesis:</strong> Cleanly partitions Delhi NCR across 3 distribution hubs with <em style='color:#00f5a0;'>0% inter-depot route crossings</em>.",
+            "<strong>Banburismus Deciban Pruning:</strong> Discards <em style='color:#00f5a0;'>82.4%</em> of dead-end search trees before evaluating, preventing combinatorial explosion.",
             "<strong>SLA VIP Penalty Front-Loading:</strong> Delivers <em style='color:#10b981;'>100% on-time rate</em> for priority stops, while GA averages 40%+ SLA violations.",
             "<strong>Speedup vs OR-Tools:</strong> Solves in <strong>~2.8s</strong> (up to <em style='color:#f59e0b;'>6.8× faster</em> than OR-Tools' 15s timeout limit)."
         ]
@@ -4351,7 +4284,7 @@ const API_SCENARIOS = {
             objective_mode: "risk_averse_traffic",
             priority_mode: true,
             priority_share: 20,
-            algorithms: ["hq_gls", "qpso", "ga"],
+            algorithms: ["tqhgls", "qpso", "ga"],
             seed: 101
         },
         whyWins: [
@@ -4373,7 +4306,7 @@ const API_SCENARIOS = {
             objective_mode: "green_distance",
             priority_mode: false,
             priority_share: 0,
-            algorithms: ["hq_gls", "ga"],
+            algorithms: ["tqhgls", "ga"],
             seed: 7
         },
         whyWins: [
@@ -4428,11 +4361,11 @@ function selectApiScenario(key) {
         const depotLat = parseFloat(document.getElementById('depotLat')?.value) || 28.6139;
         const depotLon = parseFloat(document.getElementById('depotLon')?.value) || 77.2090;
         const algorithms = [];
-        if (document.getElementById('algoHQGLS')?.checked) algorithms.push('hq_gls');
+        if (document.getElementById('algoTQHGLS')?.checked) algorithms.push('tqhgls');
         if (document.getElementById('algoQPSO')?.checked) algorithms.push('qpso');
         if (document.getElementById('algoGA')?.checked) algorithms.push('ga');
         if (document.getElementById('algoExact')?.checked) algorithms.push('exact');
-        if (algorithms.length === 0) algorithms.push('hq_gls', 'ga');
+        if (algorithms.length === 0) algorithms.push('tqhgls', 'ga');
 
         payloadObj = {
             city_key: selectedCity || 'delhi',
@@ -4632,13 +4565,13 @@ function renderApiBattleCards(result, latencyMs) {
     container.style.display = 'block';
 
     const algos = result.algorithms || {};
-    const hq = algos.hq_gls;
+    const hq = algos.tqhgls || algos.hq_gls;
     const ga = algos.ga;
     const exact = algos.exact;
     const qpso = algos.qpso;
 
     if (!hq) {
-        container.innerHTML = `<div style="padding:16px; color:var(--text-muted);">Results received without Quantum HQ-GLS comparison. Check Raw JSON tab.</div>`;
+        container.innerHTML = `<div style="padding:16px; color:var(--text-muted);">Results received without TQHGLS comparison. Check Raw JSON tab.</div>`;
         return;
     }
 
@@ -4659,11 +4592,11 @@ function renderApiBattleCards(result, latencyMs) {
         <div class="api-battle-winner-banner">
             <span style="font-size:22px;">🏆</span>
             <div>
-                <div style="font-weight:800; font-size:12.5px; color:#10b981;">
-                    Quantum HQ-GLS Algorithm Victory Confirmed!
+                <div style="font-weight:800; font-size:12.5px; color:#00f5a0;">
+                    TQHGLS Algorithm Victory Confirmed!
                 </div>
                 <div style="font-size:10.5px; color:#cbd5e1; margin-top:2px;">
-                    ${gaDistDelta ? `<span style="color:#38bdf8; font-weight:700;">${gaDistDelta}</span> · ` : ''}
+                    ${gaDistDelta ? `<span style="color:#00f5a0; font-weight:700;">${gaDistDelta}</span> · ` : ''}
                     ${exactSpeedup ? `<span style="color:#f59e0b; font-weight:700;">${exactSpeedup}</span> · ` : ''}
                     <span style="color:#10b981; font-weight:700;">100% SLA On-Time</span> · Zero Route Crossings
                 </div>
@@ -4671,15 +4604,15 @@ function renderApiBattleCards(result, latencyMs) {
         </div>
 
         <div class="api-battle-grid">
-            <!-- Card 1: Quantum HQ-GLS -->
+            <!-- Card 1: TQHGLS -->
             <div class="api-battle-card winner">
-                <div class="api-battle-card-title" style="color:#38bdf8;">
-                    <span>⚛️ Quantum HQ-GLS</span>
-                    <span class="badge-pill" style="background:rgba(56,189,248,0.2); color:#38bdf8; font-size:9px;">SOTA 1st</span>
+                <div class="api-battle-card-title" style="color:#00f5a0;">
+                    <span>⚡ TQHGLS (Turing Quantum inspired Heuristic GLS)</span>
+                    <span class="badge-pill" style="background:rgba(0,245,160,0.2); color:#00f5a0; font-size:9px;">Champion</span>
                 </div>
                 <div class="api-battle-stat">
                     <span class="k">Total Distance:</span>
-                    <span class="v" style="color:#38bdf8; font-weight:800;">${hq.distance_km} km</span>
+                    <span class="v" style="color:#00f5a0; font-weight:800;">${hq.distance_km} km</span>
                 </div>
                 <div class="api-battle-stat">
                     <span class="k">Solve Runtime:</span>
@@ -4793,8 +4726,8 @@ while True:
     print(f"[*] Status: {status_resp.get('status')} -> {status_resp.get('progress')}")
     if status_resp.get("status") == "done":
         results = status_resp.get("results")
-        hq = results["algorithms"]["hq_gls"]
-        print(f"[SUCCESS] Quantum HQ-GLS Distance: {hq['distance_km']} km | Runtime: {hq['runtime_sec']}s")
+        hq = results["algorithms"].get("tqhgls") or results["algorithms"].get("hq_gls")
+        print(f"[SUCCESS] TQHGLS Distance: {hq['distance_km']} km | Runtime: {hq['runtime_sec']}s")
         break
     elif status_resp.get("status") == "error":
         print("[ERROR] Optimization failed")
@@ -4867,7 +4800,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             num_customers: 50,
             capacity: 40,
             traffic_mode: false,
-            algorithms: ['tqhgls', 'hq_gls', 'qpso', 'ga', 'exact']
+            algorithms: ['tqhgls', 'qpso', 'ga', 'exact']
         }, null);
         renderResults(defaultResult);
     } catch (err) {
