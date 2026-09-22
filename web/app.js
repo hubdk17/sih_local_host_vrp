@@ -354,38 +354,56 @@ const FALLBACK_CITIES = [
 
 // ---- View Mode Switching ----
 function switchView(viewName) {
+    const tabHome = document.getElementById('tabHome');
     const tabMap = document.getElementById('tabMap');
     const tabComp = document.getElementById('tabComparison');
     const tabEnt = document.getElementById('tabEnterprise');
     const tabGal = document.getElementById('tabGallery');
 
+    const viewHome = document.getElementById('viewHome');
     const viewMap = document.getElementById('viewMap');
     const viewComp = document.getElementById('viewComparison');
     const viewEnt = document.getElementById('viewEnterprise');
     const viewGal = document.getElementById('viewGallery');
 
-    [tabMap, tabComp, tabEnt, tabGal].forEach(t => { if (t) t.classList.remove('active'); });
-    [viewMap, viewComp, viewEnt, viewGal].forEach(v => { if (v) v.classList.remove('active'); });
+    [tabHome, tabMap, tabComp, tabEnt, tabGal].forEach(t => { if (t) t.classList.remove('active'); });
+    [viewHome, viewMap, viewComp, viewEnt, viewGal].forEach(v => { if (v) v.classList.remove('active'); });
 
-    if (viewName === 'map') {
+    if (viewName === 'home') {
+        if (tabHome) tabHome.classList.add('active');
+        if (viewHome) viewHome.classList.add('active');
+        setElText('systemStatus', 'Quantum Astra · Welcome');
+    } else if (viewName === 'map') {
         if (tabMap) tabMap.classList.add('active');
         if (viewMap) viewMap.classList.add('active');
+        setElText('systemStatus', 'Interactive Map & Simulation');
+        setTimeout(() => {
+            if (map) {
+                map.invalidateSize();
+                if (currentDepotMarker) {
+                    map.panTo(currentDepotMarker.getLatLng());
+                }
+            }
+        }, 150);
         setTimeout(() => {
             if (map) map.invalidateSize();
-        }, 150);
+        }, 400);
     } else if (viewName === 'comparison') {
         if (tabComp) tabComp.classList.add('active');
         if (viewComp) viewComp.classList.add('active');
+        setElText('systemStatus', 'Algorithm Comparison Matrix');
         if (latestSimulationData) {
             renderComparisonMatrix(latestSimulationData);
         }
     } else if (viewName === 'enterprise') {
         if (tabEnt) tabEnt.classList.add('active');
         if (viewEnt) viewEnt.classList.add('active');
+        setElText('systemStatus', 'Mega-Scale 20–200 Hubs');
         renderEnterpriseScenario(currentEnterpriseScenarioKey);
     } else if (viewName === 'gallery') {
         if (tabGal) tabGal.classList.add('active');
         if (viewGal) viewGal.classList.add('active');
+        setElText('systemStatus', 'Research & Pitch Gallery');
         renderGallery('all');
     }
 }

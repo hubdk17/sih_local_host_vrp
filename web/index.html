@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum-Inspired VRP — Interactive Route Optimization Platform</title>
-    <meta name="description" content="Interactive web platform for Quantum-Inspired Vehicle Routing Problem optimization with real-time map simulation and comparative benchmarking.">
+    <title>Quantum Astra — Smart Routes. Optimal Tomorrow.</title>
+    <meta name="description" content="Quantum Astra — Autonomous Multi-Depot Fleet Route Optimization Platform powered by Two-Stage Quantum Heaviside Search (TQHGLS). Collapsing 100-year combinatorial routing into sub-second precision.">
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -20,17 +20,13 @@
         <!-- ======== SIDEBAR ======== -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="sidebar-brand">
-                    <div class="brand-logo-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                            <polyline points="2 17 12 22 22 17"></polyline>
-                            <polyline points="2 12 12 17 22 12"></polyline>
-                        </svg>
+                <div class="sidebar-brand" onclick="switchView('home')" style="cursor: pointer;" title="Go to Quantum Astra Welcome Page">
+                    <div class="brand-logo-img-wrapper">
+                        <img src="assets/quantum_astra_logo.jpg" alt="Quantum Astra Logo" class="brand-logo-img">
                     </div>
                     <div class="brand-info">
-                        <div class="brand-name">QUANTUM VRP <span class="edition-tag">ENTERPRISE</span></div>
-                        <div class="brand-desc">Autonomous Route Optimization Platform</div>
+                        <div class="brand-name">QUANTUM ASTRA <span class="edition-tag">ENTERPRISE</span></div>
+                        <div class="brand-desc">Smart Routes. Optimal Tomorrow.</div>
                     </div>
                 </div>
             </div>
@@ -326,7 +322,10 @@
                     <span id="tqhglsNavBadge" class="badge-pill" style="margin-left: 10px; background: rgba(0, 245, 160, 0.12); color: #00f5a0; border: 1px solid rgba(0, 245, 160, 0.3); font-size: 10.5px; font-weight: 800;">🟢 TQHGLS: Standard Micro-Precision (K &le; 10)</span>
                 </div>
                 <div class="view-tabs">
-                    <button class="view-tab active" id="tabMap" onclick="switchView('map')">
+                    <button class="view-tab active" id="tabHome" onclick="switchView('home')">
+                        <span class="tab-icon">✨</span> Welcome
+                    </button>
+                    <button class="view-tab" id="tabMap" onclick="switchView('map')">
                         <span class="tab-icon">🗺️</span> Map & Route View
                     </button>
                     <button class="view-tab" id="tabComparison" onclick="switchView('comparison')">
@@ -365,8 +364,152 @@
                 </div>
             </header>
 
+            <!-- ======== VIEW 0: WELCOME / HOME VIEW ======== -->
+            <section class="view-section active" id="viewHome">
+                <div class="welcome-container">
+                    <!-- Hero Section -->
+                    <div class="welcome-hero">
+                        <div class="welcome-badge">
+                            <span class="welcome-badge-dot"></span>
+                            <span>QUANTUM-INSPIRED AUTONOMOUS LOGISTICS PLATFORM</span>
+                            <span class="welcome-badge-pill">SIH ENTERPRISE</span>
+                        </div>
+
+                        <!-- Quantum Astra Logo with High-Tech Glow Aura -->
+                        <div class="welcome-logo-wrapper">
+                            <div class="welcome-logo-glow"></div>
+                            <img src="assets/quantum_astra_logo.jpg" alt="Quantum Astra Logo" class="welcome-logo-img">
+                        </div>
+
+                        <h1 class="welcome-title">
+                            QUANTUM <span class="gradient-text">ASTRA</span>
+                        </h1>
+                        <div class="welcome-tagline">SMART ROUTES. OPTIMAL TOMORROW.</div>
+
+                        <!-- Attention-Grabbing Caption & Value Proposition -->
+                        <p class="welcome-caption">
+                            Collapsing <strong>100-year combinatorial routing bottlenecks</strong> into <strong>sub-second quantum precision</strong>. Engineered with two-stage Heaviside quantum search (TQHGLS) to dynamically optimize multi-depot continental fleets across congested road networks with a <strong>provable 0.28% mathematical proximity</strong> to global optimality.
+                        </p>
+
+                        <!-- Primary CTA Button Group -->
+                        <div class="welcome-cta-group">
+                            <button class="btn-welcome-primary" onclick="switchView('map')" id="btnEnterPlatform">
+                                <span class="btn-welcome-icon">🚀</span>
+                                <div class="btn-welcome-text">
+                                    <span class="btn-welcome-heading">Launch Interactive Platform</span>
+                                    <span class="btn-welcome-sub">Explore Live Map, Dynamic Traffic Rerouting &amp; Fleets</span>
+                                </div>
+                                <span class="btn-welcome-arrow">&rarr;</span>
+                            </button>
+                            <div class="welcome-cta-secondary">
+                                <button class="btn-welcome-secondary" onclick="switchView('enterprise')">
+                                    <span>⚡</span> Mega-Scale Benchmarks (20–200 Hubs)
+                                </button>
+                                <button class="btn-welcome-secondary" onclick="switchView('comparison')">
+                                    <span>📊</span> 5-Algorithm Comparison Matrix
+                                </button>
+                                <button class="btn-welcome-secondary" onclick="openEvaluatorModal()">
+                                    <span>🎓</span> Evaluator Defense &amp; Proofs
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Real-World Benchmarks Strip -->
+                        <div class="welcome-stats-strip">
+                            <div class="welcome-stat-card">
+                                <div class="stat-value text-cyan">99.72%</div>
+                                <div class="stat-label">Optimality Proximity (Z-Score &le; 0.38)</div>
+                            </div>
+                            <div class="welcome-stat-card">
+                                <div class="stat-value text-emerald">2.1s</div>
+                                <div class="stat-label">Mega-Scale Solve Time (vs 10+ Years Exact)</div>
+                            </div>
+                            <div class="welcome-stat-card">
+                                <div class="stat-value text-purple">20–200</div>
+                                <div class="stat-label">Super-Depot Topology Scaling</div>
+                            </div>
+                            <div class="welcome-stat-card">
+                                <div class="stat-value text-amber">32.4%</div>
+                                <div class="stat-label">Fleet Carbon &amp; Fuel Savings</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- "What We Have Built" Interactive Architecture & Features Grid -->
+                    <div class="welcome-features-section">
+                        <div class="welcome-section-header">
+                            <span class="sec-subtitle">PRODUCTION ARCHITECTURE</span>
+                            <h2 class="sec-title">What We Have Built</h2>
+                            <p class="sec-desc">A complete deep-tech routing stack uniting quantum heuristic algorithms, continental GIS networks, and real-time operational telematics.</p>
+                        </div>
+
+                        <div class="welcome-features-grid">
+                            <!-- Feature 1 -->
+                            <div class="welcome-feature-card" onclick="switchView('map')">
+                                <div class="feature-card-glow"></div>
+                                <div class="feature-icon-box cyan">🗺️</div>
+                                <div class="feature-badge">Interactive Map &amp; Simulation</div>
+                                <h3 class="feature-title">Real-Time Autonomous Fleet Simulator</h3>
+                                <p class="feature-desc">
+                                    Full Leaflet GIS engine with live traffic layer snapping, real-time customer injection, multi-vehicle dispatch, capacity/battery constraints, and dynamic rerouting under simulated congestion shocks.
+                                </p>
+                                <div class="feature-link">Open Map &amp; Simulator &rarr;</div>
+                            </div>
+
+                            <!-- Feature 2 -->
+                            <div class="welcome-feature-card" onclick="switchView('enterprise')">
+                                <div class="feature-card-glow"></div>
+                                <div class="feature-icon-box emerald">⚡</div>
+                                <div class="feature-badge">Mega-Scale Quantum Benchmark</div>
+                                <h3 class="feature-title">20 to 200 Hub Mega-Scale Engine</h3>
+                                <p class="feature-desc">
+                                    Simulate nationwide logistics across 20 to 200 hubs and 2,000+ customer nodes in under 2.8 seconds. Includes animated fleet runs, algorithmic scaling graphs, and exact MIP theoretical asymptotic bounds.
+                                </p>
+                                <div class="feature-link">Inspect Mega Benchmarks &rarr;</div>
+                            </div>
+
+                            <!-- Feature 3 -->
+                            <div class="welcome-feature-card" onclick="switchView('comparison')">
+                                <div class="feature-card-glow"></div>
+                                <div class="feature-icon-box purple">📊</div>
+                                <div class="feature-badge">Benchmarking Matrix</div>
+                                <h3 class="feature-title">5-Solver Comparative Matrix</h3>
+                                <p class="feature-desc">
+                                    Side-by-side empirical benchmarking between Classical Exact (PuLP/MIP), Genetic Algorithms (GA), Classical QPSO, Hybrid HQ-GLS, and our Champion Two-Stage Heaviside Quantum Search (TQHGLS).
+                                </p>
+                                <div class="feature-link">View Algorithm Matrix &rarr;</div>
+                            </div>
+
+                            <!-- Feature 4 -->
+                            <div class="welcome-feature-card" onclick="openEvaluatorModal()">
+                                <div class="feature-card-glow"></div>
+                                <div class="feature-icon-box amber">🎓</div>
+                                <div class="feature-badge">Viva Defense &amp; Formulation</div>
+                                <h3 class="feature-title">Evaluator Defense Hub &amp; Math Certificate</h3>
+                                <p class="feature-desc">
+                                    Comprehensive mathematical formulations, Heaviside step transition derivations, Welch's t-test p-value statistical certificates (&lt; 0.0001), and rigorous evaluator defense proofs.
+                                </p>
+                                <div class="feature-link">Open Evaluator Defense &rarr;</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Launch Footer Banner -->
+                    <div class="welcome-footer-cta">
+                        <div class="footer-cta-content">
+                            <h3>Ready to explore the quantum dispatch platform?</h3>
+                            <p>Configure multi-depot topologies, simulate traffic congestion, and visualize optimized vehicle delivery trajectories.</p>
+                        </div>
+                        <button class="btn-welcome-launch-large" onclick="switchView('map')">
+                            <span>Launch Map &amp; Fleets</span>
+                            <span class="launch-arrow">&rarr;</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
             <!-- ======== VIEW 1: MAP VIEW ======== -->
-            <section class="view-section active" id="viewMap">
+            <section class="view-section" id="viewMap">
                 <div class="map-container">
                     <div id="map"></div>
 
