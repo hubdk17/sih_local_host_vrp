@@ -4179,7 +4179,7 @@ function closeEvaluatorModalOnBackdrop(event) {
 window.closeEvaluatorModalOnBackdrop = closeEvaluatorModalOnBackdrop;
 
 function switchEvalTab(tabKey) {
-    const tabs = ['roi', 'turing', 'quantum', 'viva'];
+    const tabs = ['roi', 'turing', 'quantum'];
     tabs.forEach(t => {
         const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
         const pane = document.getElementById(`evalTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
