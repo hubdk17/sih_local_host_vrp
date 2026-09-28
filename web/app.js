@@ -356,16 +356,14 @@ function switchView(viewName) {
     const tabMap = document.getElementById('tabMap');
     const tabComp = document.getElementById('tabComparison');
     const tabEnt = document.getElementById('tabEnterprise');
-    const tabGal = document.getElementById('tabGallery');
 
     const viewHome = document.getElementById('viewHome');
     const viewMap = document.getElementById('viewMap');
     const viewComp = document.getElementById('viewComparison');
     const viewEnt = document.getElementById('viewEnterprise');
-    const viewGal = document.getElementById('viewGallery');
 
-    [tabHome, tabMap, tabComp, tabEnt, tabGal].forEach(t => { if (t) t.classList.remove('active'); });
-    [viewHome, viewMap, viewComp, viewEnt, viewGal].forEach(v => { if (v) v.classList.remove('active'); });
+    [tabHome, tabMap, tabComp, tabEnt].forEach(t => { if (t) t.classList.remove('active'); });
+    [viewHome, viewMap, viewComp, viewEnt].forEach(v => { if (v) v.classList.remove('active'); });
 
     if (viewName === 'home') {
         if (tabHome) tabHome.classList.add('active');
@@ -398,11 +396,6 @@ function switchView(viewName) {
         if (viewEnt) viewEnt.classList.add('active');
         setElText('systemStatus', 'Mega-Scale 20–200 Hubs');
         renderEnterpriseScenario(currentEnterpriseScenarioKey);
-    } else if (viewName === 'gallery') {
-        if (tabGal) tabGal.classList.add('active');
-        if (viewGal) viewGal.classList.add('active');
-        setElText('systemStatus', 'Research & Pitch Gallery');
-        renderGallery('all');
     }
 }
 window.switchView = switchView;
